@@ -1,0 +1,2665 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistem Ujian Online - Universitas Qamarul Huda Bagu</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS Client v2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f1f5f9;
+      color: #1e293b;
+      margin: 0;
+    }
+    h1, h2, h3, .font-heading {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .kop-border {
+      border-bottom: 4px double #065f46;
+    }
+    .option-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.875rem;
+      padding: 0.875rem;
+      border-radius: 0.75rem;
+      border: 1px solid #e2e8f0;
+      background-color: #ffffff;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .option-card:hover {
+      border-color: #34d399;
+      background-color: #f8fafc;
+    }
+    .option-card:has(input:checked) {
+      border-color: #059669;
+      background-color: #ecfdf5;
+      box-shadow: 0 0 0 1px #059669;
+    }
+    .option-card:has(input:checked) .option-badge {
+      background-color: #059669;
+      color: #ffffff;
+      border-color: #059669;
+    }
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background-color: #ffffff;
+      }
+      .shadow-lg, .shadow-md, .shadow-sm {
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-16">
+
+  <!-- TOP STATUS BAR (STICKY) -->
+  <header class="sticky top-0 z-40 bg-emerald-900 text-white shadow-md no-print">
+    <div class="max-w-5xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+      <div class="flex items-center gap-2">
+        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400" id="status-dot"></span>
+        <span id="db-status-text" class="font-medium text-emerald-100">Ujian Online &bull; UNIQHBA</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="bg-emerald-800/80 border border-emerald-700 px-3 py-1 rounded-full flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>Sisa Waktu: <strong id="timer-display" class="font-mono text-amber-300">--:--</strong></span>
+          <span id="timer-status-badge" class="text-[10px] font-semibold bg-emerald-950/80 text-emerald-200 px-2 py-0.5 rounded-full">Pilih MK</span>
+        </div>
+        <button type="button" onclick="toggleLecturerModal()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg text-xs font-semibold transition">
+          Panel Dosen
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-5xl mx-auto px-4 pt-6">
+
+    <!-- KOP SURAT / HEADER INSTITUSI -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-6">
+      <div class="kop-border pb-5 flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+        <!-- Logo Resmi Universitas Qamarul Huda Badaruddin (UNIQHBA) -->
+        <div class="w-24 h-24 sm:w-28 sm:h-28 shrink-0 flex items-center justify-center">
+          <img
+            id="uniqhba-logo-img"
+            src="https://uniqhba.ac.id/assets/img/logo.png"
+            alt="Logo Universitas Qamarul Huda Badaruddin (UNIQHBA)"
+            class="w-24 h-24 sm:w-28 sm:h-28 object-contain"
+            onerror="handleLogoFallback(this)"
+          />
+          <!-- Fallback SVG Resmi UNIQHBA -->
+          <svg id="uniqhba-logo-svg" class="hidden w-24 h-24 sm:w-28 sm:h-28" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo UNIQHBA">
+            <defs>
+              <path id="topArc" d="M 36,112 A 74,74 0 1,1 184,112" />
+            </defs>
+            <path d="M110 8 C134 8, 152 24, 158 44 C180 46, 202 64, 204 88 C206 112, 192 132, 174 142 C182 164, 172 190, 150 200 C130 208, 118 198, 110 188 C102 198, 90 208, 70 200 C48 190, 38 164, 46 142 C28 132, 14 112, 16 88 C18 64, 40 46, 62 44 C68 24, 86 8, 110 8 Z"
+                  fill="#ffffff" stroke="#15803d" stroke-width="5.5"/>
+            <path d="M110 15 C131 15, 147 29, 152 48 C172 50, 193 66, 195 88 C197 109, 184 127, 167 137 C174 157, 165 181, 146 190 C128 197, 117 188, 110 179 C103 188, 92 197, 74 190 C55 181, 46 157, 53 137 C36 127, 23 109, 25 88 C27 66, 48 50, 68 48 C73 29, 89 15, 110 15 Z"
+                  fill="none" stroke="#166534" stroke-width="2"/>
+            <text fill="#111827" font-family="Arial, sans-serif" font-weight="800" font-size="11.2" letter-spacing="0.6">
+              <textPath href="#topArc" startOffset="50%" text-anchor="middle">UNIVERSITAS QAMARUL HUDA BADARUDDIN</textPath>
+            </text>
+            <g fill="#eab308" stroke="#a16207" stroke-width="0.6">
+              <polygon points="110,48 112.5,54 119,54 113.8,57.8 115.8,64 110,60.2 104.2,64 106.2,57.8 101,54 107.5,54" />
+              <circle cx="91" cy="61" r="2.6"/><circle cx="77" cy="70" r="2.6"/><circle cx="67" cy="83" r="2.6"/><circle cx="62" cy="98" r="2.6"/>
+              <circle cx="129" cy="61" r="2.6"/><circle cx="143" cy="70" r="2.6"/><circle cx="153" cy="83" r="2.6"/><circle cx="158" cy="98" r="2.6"/>
+            </g>
+            <circle cx="110" cy="106" r="36" fill="#f0fdf4" stroke="#15803d" stroke-width="2"/>
+            <ellipse cx="110" cy="106" rx="18" ry="36" fill="none" stroke="#86efac" stroke-width="1.2"/>
+            <line x1="74" y1="106" x2="146" y2="106" stroke="#86efac" stroke-width="1.2"/>
+            <line x1="78" y1="90" x2="142" y2="90" stroke="#86efac" stroke-width="1.2"/>
+            <line x1="78" y1="122" x2="142" y2="122" stroke="#86efac" stroke-width="1.2"/>
+            <path d="M84 99 C90 96, 96 101, 100 105 C106 101, 113 100, 118 104 C123 102, 130 105, 136 109 C131 114, 121 115, 112 113 C103 115, 92 113, 84 106 Z" fill="#22c55e"/>
+            <path d="M74 132 Q92 126 110 134 Q128 126 146 132 L143 148 Q126 142 110 149 Q94 142 77 148 Z" fill="#fef08a" stroke="#15803d" stroke-width="1.8"/>
+            <line x1="110" y1="134" x2="110" y2="149" stroke="#15803d" stroke-width="1.5"/>
+            <path d="M135 76 C125 90, 116 112, 109 133 L113 134 C123 115, 133 95, 141 78 Z" fill="#ffffff" stroke="#374151" stroke-width="1.4"/>
+            <text x="110" y="167" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="900" font-size="18.5" letter-spacing="0.5">UNIQHBA</text>
+            <text x="110" y="179" text-anchor="middle" fill="#166534" font-family="Arial, sans-serif" font-weight="800" font-size="8.2" letter-spacing="0.4">BAGU LOMBOK TENGAH</text>
+          </svg>
+        </div>
+
+        <!-- Teks Kop Institusi -->
+        <div class="flex-1">
+          <p class="text-xs sm:text-sm font-bold tracking-widest text-emerald-700 uppercase">Yayasan Pondok Pesantren Qamarul Huda</p>
+          <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight uppercase leading-tight mt-0.5">
+            Universitas Qamarul Huda Bagu
+          </h1>
+          <h2 id="exam-faculty-prodi-display" class="text-base sm:text-lg font-bold text-emerald-800 uppercase tracking-wide mt-0.5">
+            Fakultas Kesehatan &bull; Sistem Evaluasi Pembelajaran
+          </h2>
+          <p class="text-xs text-slate-500 mt-1">
+            Jl. H. Badaruddin, Desa Bagu, Kec. Pringgarata, Kab. Lombok Tengah, Nusa Tenggara Barat
+          </p>
+        </div>
+      </div>
+
+      <!-- Judul & Metadata Ujian (Muncul / Berubah Otomatis Saat Mahasiswa Memilih Semester & Mata Kuliah) -->
+      <div class="mt-5 text-center">
+        <span id="exam-semester-badge" class="inline-block bg-emerald-100 text-emerald-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+          Portal Ujian Online Terpadu
+        </span>
+        <h3 id="exam-title-display" class="text-lg sm:text-xl font-extrabold text-slate-900 uppercase">
+          Silakan Pilih Semester &amp; Mata Kuliah Ujian
+        </h3>
+        <p id="exam-course-display" class="text-sm font-semibold text-slate-600 mt-0.5">
+          Lengkapi identitas peserta dan pilih jadwal ujian pada formulir di bawah ini
+        </p>
+      </div>
+
+      <div id="exam-meta-grid" class="hidden mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs sm:text-sm">
+        <div>
+          <span class="text-slate-500 block">Cakupan Materi:</span>
+          <strong id="exam-materi-display" class="text-slate-800">-</strong>
+        </div>
+        <div>
+          <span class="text-slate-500 block">Bentuk &amp; Jumlah Soal:</span>
+          <strong id="exam-format-display" class="text-slate-800">-</strong>
+        </div>
+        <div>
+          <span class="text-slate-500 block">Alokasi Waktu &amp; Bobot:</span>
+          <strong id="exam-time-bobot-display" class="text-slate-800">-</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- FORM IDENTITAS, PILIH SEMESTER/MK & LEMBAR SOAL -->
+    <form id="exam-form" onsubmit="handleExamSubmit(event)" class="space-y-6">
+
+      <!-- BAGIAN 1: LOGIN PESERTA & PILIH MATA KULIAH UJIAN -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+        <div class="flex items-center gap-3 border-b border-slate-200 pb-4 mb-5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-700 text-white font-bold flex items-center justify-center text-sm">1</div>
+          <div>
+            <h3 class="text-base sm:text-lg font-bold text-slate-900">Identitas Peserta &amp; Pemilihan Mata Kuliah Ujian</h3>
+            <p class="text-xs text-slate-500">Isi identitas Anda, pilih <strong>Semester</strong> dan <strong>Mata Kuliah</strong> yang diujikan, lalu masukkan <strong>Password/Token Mata Kuliah</strong> jika diminta.</p>
+          </div>
+        </div>
+
+        <!-- A. DATA DIRI MAHASISWA -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+          <!-- Nama Peserta -->
+          <div>
+            <label for="nama_peserta" class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
+              Nama Lengkap Peserta <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="nama_peserta" name="nama_peserta" required placeholder="Contoh: Baiq Siti Aminah"
+              class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none transition" />
+          </div>
+
+          <!-- NIM -->
+          <div>
+            <label for="nim" class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
+              Nomor Induk Mahasiswa (NIM) <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="nim" name="nim" required placeholder="Contoh: 202401001"
+              class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none transition" />
+          </div>
+
+          <!-- Program Studi -->
+          <div>
+            <label for="prodi" class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
+              Program Studi <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="prodi" name="prodi" required value="S1 Keperawatan"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm font-medium text-slate-800 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none transition" />
+          </div>
+
+          <!-- Kelas -->
+          <div>
+            <label for="kelas" class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
+              Kelas <span class="text-red-500">*</span>
+            </label>
+            <select id="kelas" name="kelas" required
+              class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none transition">
+              <option value="" disabled selected>-- Pilih Kelas --</option>
+              <option value="Kelas A">Kelas A</option>
+              <option value="Kelas B">Kelas B</option>
+              <option value="Kelas C">Kelas C</option>
+              <option value="Kelas D">Kelas D</option>
+              <option value="Kelas Karyawan / Non-Reguler">Kelas Karyawan / Non-Reguler</option>
+            </select>
+          </div>
+
+          <!-- Tanggal & Waktu -->
+          <div class="md:col-span-2">
+            <label for="waktu_ujian" class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
+              Tanggal &amp; Waktu Ujian <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="waktu_ujian" name="waktu_ujian" required
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm font-medium text-slate-800 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none transition" />
+          </div>
+        </div>
+
+        <!-- B. KOTAK PILIH SEMESTER, MATA KULIAH & TOKEN UJIAN -->
+        <div class="mt-6 pt-5 border-t border-slate-200">
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h4 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-emerald-900 flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                <span>Pilih Jadwal Semester &amp; Mata Kuliah</span>
+              </h4>
+              <button type="button" onclick="refreshExamBankFromServer()" class="text-xs font-semibold text-emerald-700 hover:text-emerald-900 underline">
+                Segarkan Daftar MK
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Pilih Semester -->
+              <div>
+                <label for="semester" class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
+                  1. Pilih Semester <span class="text-red-500">*</span>
+                </label>
+                <select id="semester" name="semester" required onchange="handleSemesterSelectChange()"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none transition">
+                  <option value="" disabled selected>-- Pilih Semester --</option>
+                </select>
+              </div>
+
+              <!-- Pilih Mata Kuliah -->
+              <div>
+                <label for="pilih_matkul" class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
+                  2. Pilih Mata Kuliah &amp; Jenis Ujian <span class="text-red-500">*</span>
+                </label>
+                <select id="pilih_matkul" name="pilih_matkul" required disabled onchange="handleCourseSelectChange()"
+                  class="w-full rounded-xl border border-slate-300 bg-white disabled:bg-slate-100 disabled:text-slate-400 px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none transition">
+                  <option value="" disabled selected>-- Pilih Semester Terlebih Dahulu --</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Kotak Input Password / Token Mata Kuliah (Muncul Otomatis jika MK Dikunci Dosen) -->
+            <div id="course-token-box" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-start gap-2.5">
+                  <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <label for="input_course_token" class="block text-xs sm:text-sm font-bold text-amber-950">
+                      3. Password / Token Akses Mata Kuliah <span class="text-red-600">*</span>
+                    </label>
+                    <p class="text-xs text-amber-800">Mata kuliah ini dikunci oleh dosen pengampu. Masukkan kode password ujian untuk membuka soal.</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 sm:w-64 shrink-0">
+                  <input type="password" id="input_course_token" autocomplete="off" placeholder="Masukkan Password MK..."
+                    onkeydown="if(event.key==='Enter'){ event.preventDefault(); startExamSession(); }"
+                    class="w-full rounded-xl border border-amber-400 bg-white px-3.5 py-2 text-sm font-mono font-bold tracking-wider text-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none" />
+                  <button type="button" onclick="toggleCourseTokenVisibility()" title="Tampilkan / Sembunyikan Password"
+                    class="px-3 py-2 rounded-xl border border-amber-300 bg-white hover:bg-amber-100 text-amber-900 text-xs font-semibold">
+                    Lihat
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Info Mata Kuliah Terbuka Tanpa Password -->
+            <div id="course-open-badge" class="hidden text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2.5 flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+              </svg>
+              <span>Mata kuliah ini bersifat terbuka (tanpa password khusus). Pastikan nama dan NIM sudah benar sebelum memulai.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TOMBOL MULAI UJIAN (MUNCUL SEBELUM SOAL DIBUKA) -->
+        <div id="start-exam-bar" class="mt-6 pt-5 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-emerald-50/70 border border-emerald-200 rounded-xl p-4">
+          <div class="text-xs sm:text-sm text-emerald-950">
+            <p class="font-bold">Siap Memulai Ujian?</p>
+            <p id="start-exam-hint" class="text-emerald-800 mt-0.5">Pilih <strong>Semester</strong> dan <strong>Mata Kuliah</strong> terlebih dahulu, lalu klik tombol <strong>Mulai Ujian</strong>.</p>
+          </div>
+          <button type="button" id="start-exam-btn" onclick="startExamSession()"
+            class="w-full sm:w-auto shrink-0 px-7 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>Mulai Ujian</span>
+          </button>
+        </div>
+
+        <!-- STATUS UJIAN BERLANGSUNG (MUNCUL SETELAH KLIK MULAI) -->
+        <div id="exam-active-banner" class="hidden mt-5 pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs text-emerald-800 font-semibold">
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-600 animate-ping"></span>
+            <span id="active-course-banner-text">Sesi ujian aktif &mdash; Silakan kerjakan seluruh soal di bawah ini sebelum waktu habis.</span>
+          </span>
+          <button type="button" onclick="resetDraft()" class="text-red-600 hover:text-red-800 underline font-semibold">
+            Ganti Mata Kuliah / Ulangi
+          </button>
+        </div>
+      </section>
+
+      <!-- WRAPPER SOAL UJIAN (TERSEMBUNYI HINGGA KLIK MULAI UJIAN) -->
+      <div id="exam-questions-wrapper" class="hidden space-y-6">
+
+        <!-- BAGIAN 2: SOAL PILIHAN GANDA (DIRENDER DINAMIS) -->
+        <section id="pg-section-box" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-4 mb-6">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-emerald-700 text-white font-bold flex items-center justify-center text-sm">2</div>
+              <div>
+                <h3 id="pg-section-title" class="text-base sm:text-lg font-bold text-slate-900">Bagian I: Soal Pilihan Ganda</h3>
+                <p class="text-xs text-slate-500">Pilihlah satu jawaban yang paling tepat berdasarkan analisis klinis.</p>
+              </div>
+            </div>
+            <span id="pg-section-bobot" class="text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full">
+              Bobot: 80 Poin
+            </span>
+          </div>
+
+          <div id="pg-container" class="space-y-8">
+            <!-- Soal PG dirender otomatis oleh JavaScript -->
+          </div>
+        </section>
+
+        <!-- BAGIAN 3: SOAL ESAI (DIRENDER DINAMIS) -->
+        <section id="esai-section-box" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-4 mb-6">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-emerald-700 text-white font-bold flex items-center justify-center text-sm">3</div>
+              <div>
+                <h3 id="esai-section-title" class="text-base sm:text-lg font-bold text-slate-900">Bagian II: Soal Esai / Studi Kasus</h3>
+                <p class="text-xs text-slate-500">Jawablah kasus berikut secara ringkas, jelas, dan sistematis.</p>
+              </div>
+            </div>
+            <span id="esai-section-bobot" class="text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-full">
+              Bobot: 20 Poin
+            </span>
+          </div>
+
+          <div id="esai-container" class="space-y-8">
+            <!-- Soal Esai dirender otomatis oleh JavaScript -->
+          </div>
+        </section>
+
+        <!-- TOMBOL SUBMIT -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
+          <div class="text-xs sm:text-sm text-slate-600">
+            <p id="submit-reminder-title" class="font-semibold text-slate-800">Pastikan seluruh identitas dan soal telah terisi lengkap.</p>
+            <p>Jawaban yang dikirim akan tersimpan langsung ke database ujian Prodi.</p>
+          </div>
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <button type="button" onclick="resetDraft()" class="px-4 py-3 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-sm font-semibold transition w-1/3 sm:w-auto">
+              Reset
+            </button>
+            <button type="submit" id="submit-btn" class="flex-1 sm:flex-initial px-7 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span>Kirim Jawaban Ujian</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </form>
+
+    <!-- BUKTI PENGUMPULAN UJIAN (MUNCUL SETELAH BERHASIL SUBMIT) -->
+    <section id="receipt-section" class="hidden bg-white rounded-2xl shadow-md border-2 border-emerald-600 p-6 sm:p-8 mt-6">
+      <div class="text-center border-b border-slate-200 pb-5">
+        <div class="w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-3">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-extrabold text-slate-900">Jawaban Ujian Berhasil Dikirim!</h3>
+        <p class="text-sm text-slate-600 mt-1" id="receipt-storage-note">Data jawaban Anda telah tersimpan ke database ujian UNIQHBA.</p>
+      </div>
+
+      <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-slate-50 p-5 rounded-xl border border-slate-200">
+        <div>
+          <span class="text-xs text-slate-500 block">ID Registrasi Ujian:</span>
+          <strong id="rec-id" class="font-mono text-emerald-800 text-xs sm:text-sm">-</strong>
+        </div>
+        <div>
+          <span class="text-xs text-slate-500 block">Waktu Pengumpulan:</span>
+          <strong id="rec-time" class="text-slate-800">-</strong>
+        </div>
+        <div>
+          <span class="text-xs text-slate-500 block">Nama Peserta / NIM:</span>
+          <strong id="rec-name" class="text-slate-800">-</strong>
+        </div>
+        <div>
+          <span class="text-xs text-slate-500 block">Prodi / Semester / Kelas:</span>
+          <strong id="rec-class" class="text-slate-800">-</strong>
+        </div>
+        <div class="sm:col-span-2">
+          <span class="text-xs text-slate-500 block">Mata Kuliah &amp; Jenis Ujian:</span>
+          <strong id="rec-course" class="text-emerald-900">-</strong>
+        </div>
+        <div class="sm:col-span-2 pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span id="rec-pg-label" class="text-xs text-slate-500 block">Skor Pilihan Ganda:</span>
+            <strong id="rec-pg-score" class="text-lg font-extrabold text-emerald-700">-</strong>
+          </div>
+          <div class="text-xs text-slate-500 max-w-xs">
+            *Nilai akhir (maks. 100) akan ditambahkan setelah dosen mengoreksi soal esai.
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 flex flex-wrap justify-center gap-3 no-print">
+        <button type="button" onclick="window.print()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold transition">
+          Cetak / Simpan Bukti PDF
+        </button>
+        <button type="button" onclick="downloadBackupJSON()" class="px-5 py-2.5 rounded-xl border border-emerald-700 text-emerald-800 hover:bg-emerald-50 text-sm font-semibold transition">
+          Unduh Salinan Jawaban (.JSON)
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL PANEL DOSEN (REKAP NILAI + BANK MATA KULIAH, PASSWORD & COPY-PASTE SOAL) -->
+  <div id="lecturer-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 no-print">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-5 sm:px-6 py-4 bg-emerald-900 text-white flex items-center justify-between shrink-0">
+        <div>
+          <h4 class="font-bold text-base sm:text-lg">Panel Dosen Pengampu — Manajemen Ujian &amp; Nilai</h4>
+          <p class="text-xs text-emerald-200">Universitas Qamarul Huda Bagu &bull; Bank Mata Kuliah, Password Ujian, Soal &amp; Rekap Nilai</p>
+        </div>
+        <button type="button" onclick="toggleLecturerModal()" class="text-emerald-200 hover:text-white p-1">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Form Login Password Dosen -->
+      <div id="lecturer-login-box" class="p-8 text-center">
+        <p class="text-sm text-slate-600 mb-3">Masukkan Password Dosen untuk membuka bank soal, pengaturan password MK, dan rekap nilai:</p>
+        <div class="max-w-xs mx-auto flex gap-2">
+          <input type="password" id="lecturer-pin-input" placeholder="Password Dosen"
+            onkeydown="if(event.key==='Enter'){ event.preventDefault(); verifyLecturerPin(); }"
+            class="flex-1 rounded-xl border border-slate-300 px-3.5 py-2 text-sm focus:border-emerald-600 outline-none" />
+          <button type="button" onclick="verifyLecturerPin()" class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold">
+            Masuk
+          </button>
+        </div>
+      </div>
+
+      <!-- Konten Dashboard Dosen -->
+      <div id="lecturer-dashboard" class="hidden flex-1 flex flex-col overflow-hidden">
+        <!-- Navigasi Tab Panel Dosen -->
+        <div class="px-5 sm:px-6 pt-3 bg-slate-100 border-b border-slate-200 flex flex-wrap gap-2 shrink-0">
+          <button type="button" id="tab-btn-rekap" onclick="switchLecturerTab('rekap')"
+            class="px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold bg-white text-emerald-800 border-t border-x border-slate-200 -mb-px transition">
+            1. Rekap Nilai &amp; Koreksi Esai
+          </button>
+          <button type="button" id="tab-btn-pengaturan" onclick="switchLecturerTab('pengaturan')"
+            class="px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold text-slate-600 hover:text-emerald-800 transition">
+            2. Bank Mata Kuliah, Password MK &amp; Copy-Paste Soal
+          </button>
+        </div>
+
+        <!-- TAB 1: REKAP NILAI & KOREKSI ESAI -->
+        <div id="lecturer-tab-rekap" class="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span id="lecturer-count-info" class="text-sm font-semibold text-slate-700">Memuat data peserta...</span>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" onclick="toggleDbConfigBox()" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-800 border border-slate-300 text-xs font-semibold hover:bg-slate-200">
+                Pengaturan Koneksi Supabase
+              </button>
+              <button type="button" onclick="loadResultsFromSupabase()" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100">
+                Muat Ulang Data
+              </button>
+              <button type="button" onclick="exportTableToCSV()" class="px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800">
+                Ekspor CSV (Excel)
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Rekap berdasarkan Semester & Mata Kuliah -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs">
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Filter Semester:</label>
+              <select id="filter-rekap-semester" onchange="renderLecturerResultsTable()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-medium">
+                <option value="">Semua Semester</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Filter Mata Kuliah:</label>
+              <select id="filter-rekap-matkul" onchange="renderLecturerResultsTable()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-medium">
+                <option value="">Semua Mata Kuliah</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Pengaturan Koneksi Supabase -->
+          <div id="db-config-box" class="hidden bg-slate-50 border border-slate-300 rounded-xl p-4 space-y-3 text-xs">
+            <p class="font-bold text-slate-800">Konfigurasi Database Supabase</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Supabase Project URL</label>
+                <input type="text" id="cfg-supabase-url" placeholder="https://xyzcompany.supabase.co" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 bg-white font-mono" />
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Supabase Anon Public Key</label>
+                <input type="text" id="cfg-supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." class="w-full border border-slate-300 rounded-lg px-3 py-1.5 bg-white font-mono" />
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-slate-500">Pastikan tabel <code class="bg-slate-200 px-1 rounded">hasil_uts_kmb3</code> dan <code class="bg-slate-200 px-1 rounded">pengaturan_ujian</code> sudah dibuat di Supabase.</span>
+              <button type="button" onclick="saveSupabaseConfigFromUI()" class="px-4 py-1.5 rounded-lg bg-emerald-700 text-white font-bold hover:bg-emerald-800">
+                Simpan &amp; Hubungkan
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left text-xs sm:text-sm">
+              <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                <tr>
+                  <th class="p-3">NIM</th>
+                  <th class="p-3">Nama Peserta</th>
+                  <th class="p-3">Semester / Kelas</th>
+                  <th class="p-3">Mata Kuliah</th>
+                  <th class="p-3">Skor PG</th>
+                  <th class="p-3">Nilai Esai</th>
+                  <th class="p-3">Nilai Akhir</th>
+                  <th class="p-3 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="lecturer-table-body" class="divide-y divide-slate-200">
+                <tr>
+                  <td colspan="8" class="p-4 text-center text-slate-500">Belum ada data.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Detail Koreksi Esai Peserta Terpilih -->
+          <div id="grading-detail-box" class="hidden border-2 border-emerald-600 rounded-xl p-4 bg-emerald-50/40 space-y-3">
+            <div class="flex items-center justify-between">
+              <h5 class="font-bold text-sm text-emerald-950" id="grading-student-title">Koreksi Jawaban Esai</h5>
+              <button type="button" onclick="document.getElementById('grading-detail-box').classList.add('hidden')" class="text-xs text-slate-500 hover:text-slate-800">Tutup</button>
+            </div>
+            <div id="grading-essays-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <!-- Konten esai peserta dirender dinamis -->
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+              <input type="text" id="input-catatan-dosen" placeholder="Catatan umpan balik dosen (opsional)..." class="flex-1 min-w-[200px] border border-slate-300 rounded-lg px-3 py-1.5 text-xs bg-white" />
+              <button type="button" onclick="saveAskepGrades()" class="px-4 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold">
+                Simpan Nilai ke Supabase
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: BANK MATA KULIAH, PASSWORD MK & COPY-PASTE SOAL -->
+        <div id="lecturer-tab-pengaturan" class="hidden p-5 sm:p-6 overflow-y-auto flex-1 space-y-6">
+
+          <!-- 0. DAFTAR MATA KULIAH & UJIAN TERSIMPAN (BANK UJIAN) -->
+          <div class="bg-emerald-950 text-white rounded-2xl p-4 sm:p-5 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h5 class="font-bold text-sm sm:text-base text-white">Daftar Bank Mata Kuliah &amp; Jadwal Ujian Aktif</h5>
+                <p class="text-xs text-emerald-200">Semua mata kuliah di bawah ini akan otomatis muncul pada pilihan Semester &amp; Mata Kuliah di halaman login mahasiswa.</p>
+              </div>
+              <button type="button" onclick="startNewExamForm()" class="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-emerald-950 text-xs font-extrabold shadow transition">
+                + Tambah Mata Kuliah Baru
+              </button>
+            </div>
+
+            <div id="exam-bank-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <!-- Daftar MK dirender otomatis oleh JS -->
+            </div>
+          </div>
+
+          <!-- A. FORM EDITOR MATA KULIAH, SEMESTER & PASSWORD/TOKEN -->
+          <div id="exam-editor-section" class="bg-slate-50 border-2 border-emerald-600/40 rounded-2xl p-4 sm:p-5 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+              <div>
+                <span id="editor-mode-badge" class="inline-block text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-md mb-1">
+                  Mode: Edit Mata Kuliah
+                </span>
+                <h5 id="editor-section-heading" class="font-bold text-sm sm:text-base text-slate-900">A. Identitas Mata Kuliah, Semester &amp; Password Ujian</h5>
+              </div>
+              <button type="button" onclick="restoreDefaultExamBank()" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700">
+                Reset Bank ke Bawaan
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 text-xs sm:text-sm">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Semester <span class="text-red-500">*</span></label>
+                <input type="text" id="set-semester" list="semester-suggestions" placeholder="Contoh: V (Lima)"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 focus:border-emerald-600 outline-none" />
+                <datalist id="semester-suggestions">
+                  <option value="I (Satu)">
+                  <option value="II (Dua)">
+                  <option value="III (Tiga)">
+                  <option value="IV (Empat)">
+                  <option value="V (Lima)">
+                  <option value="VI (Enam)">
+                  <option value="VII (Tujuh)">
+                  <option value="VIII (Delapan)">
+                </datalist>
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block font-semibold text-slate-700 mb-1">Nama Mata Kuliah &amp; SKS <span class="text-red-500">*</span></label>
+                <input type="text" id="set-mata-kuliah" placeholder="Contoh: Keperawatan Medikal Bedah III (3 SKS: T2, P1)"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 focus:border-emerald-600 outline-none" />
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Jenis / Judul Ujian</label>
+                <input type="text" id="set-judul-ujian" placeholder="Ujian Tengah Semester (UTS)"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 focus:border-emerald-600 outline-none" />
+              </div>
+
+              <!-- PASSWORD / TOKEN MATA KULIAH -->
+              <div class="sm:col-span-2 bg-amber-50/90 border border-amber-300 rounded-xl p-2.5">
+                <label class="block font-bold text-amber-950 mb-1 text-xs">
+                  Password / Token Akses Mata Kuliah (Kunci Keamanan)
+                </label>
+                <div class="flex gap-2">
+                  <input type="text" id="set-token-ujian" placeholder="Contoh: KMB3-UTS (Kosongkan jika tanpa password)"
+                    class="flex-1 rounded-lg border border-amber-400 bg-white px-3 py-1.5 font-mono font-bold text-slate-900 focus:border-emerald-600 outline-none" />
+                  <button type="button" onclick="generateRandomCourseToken()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shrink-0">
+                    Acak Kode
+                  </button>
+                </div>
+                <p class="text-[11px] text-amber-800 mt-1">Mahasiswa wajib mengetik password ini saat memilih mata kuliah ini agar kelas/semester lain tidak bisa masuk.</p>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Program Studi</label>
+                <input type="text" id="set-prodi" placeholder="S1 Keperawatan"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 focus:border-emerald-600 outline-none" />
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Alokasi Waktu (Menit)</label>
+                <input type="number" id="set-durasi-menit" min="5" max="300" placeholder="150"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 focus:border-emerald-600 outline-none" />
+              </div>
+
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Bobot RPS</label>
+                  <input type="text" id="set-bobot-rps" placeholder="25%"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 focus:border-emerald-600 outline-none" />
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Poin PG</label>
+                  <input type="number" id="set-bobot-pg" min="0" max="100" placeholder="80"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 focus:border-emerald-600 outline-none" />
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Poin Esai</label>
+                  <input type="number" id="set-bobot-esai" min="0" max="100" placeholder="20"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 focus:border-emerald-600 outline-none" />
+                </div>
+              </div>
+
+              <div class="sm:col-span-3">
+                <label class="block font-semibold text-slate-700 mb-1">Cakupan Materi Ujian</label>
+                <input type="text" id="set-cakupan-materi" placeholder="Contoh: Sistem Muskuloskeletal, Integumen, Persepsi Sensori & Persarafan"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 focus:border-emerald-600 outline-none" />
+              </div>
+            </div>
+          </div>
+
+          <!-- B. COPY-PASTE SOAL PILIHAN GANDA OTOMATIS -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h5 class="font-bold text-sm sm:text-base text-slate-900">B. Copy-Paste Soal Pilihan Ganda (Otomatis Terbaca)</h5>
+                <p class="text-xs text-slate-500">Tempelkan (Paste) seluruh soal pilihan ganda dari Word/PDF/WA ke kotak ini. Tulis <code class="bg-slate-100 px-1 rounded font-mono">Kunci: C</code> di bawah tiap soal (atau beri tanda <code class="bg-slate-100 px-1 rounded font-mono">*</code> di depan opsi benar).</p>
+              </div>
+              <button type="button" onclick="insertSamplePgTemplate()" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100">
+                + Contoh Format PG
+              </button>
+            </div>
+
+            <textarea id="raw-pg-editor" rows="9"
+              placeholder="Contoh format copy-paste:&#10;1. Seorang pasien laki-laki berusia 45 tahun datang ke IGD dengan keluhan nyeri dada...&#10;A. Memberikan posisi Trendelenburg&#10;B. Melakukan perekaman EKG 12 sadapan&#10;C. Menganjurkan pasien berjalan santai&#10;D. Memberikan minum air dingin&#10;E. Mengompres hangat area dada&#10;Kunci: B&#10;&#10;2. Soal berikutnya..."
+              class="w-full rounded-xl border border-slate-300 bg-slate-50/70 p-3.5 text-xs sm:text-sm font-mono leading-relaxed focus:bg-white focus:border-emerald-600 outline-none"></textarea>
+          </div>
+
+          <!-- C. COPY-PASTE SOAL ESAI OTOMATIS -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h5 class="font-bold text-sm sm:text-base text-slate-900">C. Copy-Paste Soal Esai / Studi Kasus (Opsional)</h5>
+                <p class="text-xs text-slate-500">Pisahkan antar soal esai dengan baris kosong lalu nomor soal (<code class="bg-slate-100 px-1 rounded font-mono">1. ...</code>, <code class="bg-slate-100 px-1 rounded font-mono">2. ...</code>). Kosongkan jika ujian hanya Pilihan Ganda.</p>
+              </div>
+              <button type="button" onclick="insertSampleEsaiTemplate()" class="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold hover:bg-amber-100">
+                + Contoh Format Esai
+              </button>
+            </div>
+
+            <textarea id="raw-esai-editor" rows="6"
+              placeholder="Contoh format copy-paste esai:&#10;1. Kasus 1: Tn. A (30 tahun, BB 50 kg) dibawa ke IGD karena luka bakar...&#10;Pertanyaan:&#10;a. Hitung kebutuhan cairan 24 jam pertama!&#10;b. Sebutkan 1 diagnosis keperawatan prioritas!&#10;&#10;2. Kasus 2: Ny. M (60 tahun) dirawat dengan stroke..."
+              class="w-full rounded-xl border border-slate-300 bg-slate-50/70 p-3.5 text-xs sm:text-sm font-mono leading-relaxed focus:bg-white focus:border-emerald-600 outline-none"></textarea>
+          </div>
+
+          <!-- D. PRATINJAU HASIL PARSING & TOMBOL SIMPAN KE BANK -->
+          <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 sm:p-5 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h5 class="font-bold text-sm text-emerald-950">D. Pratinjau &amp; Simpan Mata Kuliah ke Server Ujian</h5>
+                <p id="parse-status-summary" class="text-xs text-emerald-800 mt-0.5">Klik "Cek &amp; Pratinjau Soal" untuk memastikan seluruh nomor dan kunci jawaban terbaca otomatis.</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="previewParsedExam()" class="px-4 py-2.5 rounded-xl bg-white border border-emerald-600 text-emerald-800 hover:bg-emerald-100 text-xs sm:text-sm font-bold transition">
+                  Cek &amp; Pratinjau Soal
+                </button>
+                <button type="button" onclick="saveCurrentExamToBank()" class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold shadow transition">
+                  Simpan &amp; Terbitkan Mata Kuliah
+                </button>
+              </div>
+            </div>
+
+            <!-- Kotak Hasil Pratinjau -->
+            <div id="parsed-preview-box" class="hidden bg-white border border-emerald-200 rounded-xl p-4 max-h-64 overflow-y-auto space-y-2 text-xs">
+              <!-- Diisi oleh previewParsedExam() -->
+            </div>
+
+            <!-- Info SQL Sync Supabase (Collapsible) -->
+            <details class="text-xs text-slate-600 pt-2 border-t border-emerald-200/80">
+              <summary class="cursor-pointer font-semibold text-emerald-900 hover:underline">
+                Info Sinkronisasi Online ke HP Mahasiswa (Klik untuk melihat SQL Supabase)
+              </summary>
+              <div class="mt-2 bg-slate-900 text-emerald-300 p-3 rounded-xl font-mono text-[11px] overflow-x-auto">
+                <p class="text-slate-400 mb-1">-- Jalankan sekali di SQL Editor Supabase agar daftar mata kuliah, password &amp; soal otomatis muncul di HP semua mahasiswa:</p>
+                <pre>CREATE TABLE IF NOT EXISTS pengaturan_ujian (
+  id TEXT PRIMARY KEY,
+  config JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE pengaturan_ujian ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Akses penuh pengaturan ujian" ON pengaturan_ujian FOR ALL USING (true) WITH CHECK (true);</pre>
+              </div>
+            </details>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC & KONFIGURASI SUPABASE -->
+  <script>
+    // =========================================================================
+    // 1. KONFIGURASI DATABASE SUPABASE & PIN DOSEN
+    //    >>> GANTI 2 BARIS DI BAWAH INI DENGAN PROJECT URL & ANON KEY ANDA <<<
+    // =========================================================================
+    const DEFAULT_SUPABASE_URL = 'https://pldepoiecxuulwggsyyh.supabase.co/rest/v1/';
+    const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_kS-YkK3J4CM3d_K0P4X3bA_CWocoFgL';
+    const SUPABASE_TABLE = 'hasil_uts_kmb3';
+    const SUPABASE_CONFIG_TABLE = 'pengaturan_ujian';
+    const BANK_CONFIG_ID = 'exam_bank_v2';
+    const LEGACY_CONFIG_ID = 'active_exam_config';
+    const LECTURER_PIN = 'dosen123';
+    const LOCAL_BANK_KEY = 'uniqhba_exam_bank_v2';
+    const LOCAL_LEGACY_KEY = 'uniqhba_exam_config_v1';
+
+    let supabaseClient = null;
+    let isSupabaseReady = false;
+    let lastSubmittedPayload = null;
+    let cachedResults = [];
+    let activeGradingId = null;
+
+    // =========================================================================
+    // 2. DATA DEFAULT BANK MATA KULIAH (MENDUKUNG MULTI SEMESTER & TOKEN MK)
+    // =========================================================================
+    const DEFAULT_EXAM_BANK = [
+      {
+        id: 'mk_kmb3_sem5_uts',
+        judulUjian: 'Ujian Tengah Semester (UTS)',
+        mataKuliah: 'Keperawatan Medikal Bedah III (3 SKS: T2, P1)',
+        semester: 'V (Lima)',
+        prodi: 'S1 Keperawatan',
+        tokenUjian: 'KMB3-UTS',
+        cakupanMateri: 'Sistem Muskuloskeletal, Integumen, Persepsi Sensori & Persarafan',
+        durasiMenit: 150,
+        bobotRps: '25%',
+        bobotPg: 80,
+        bobotEsai: 20,
+        pgQuestions: [
+          {
+            nomor: 1,
+            tag: 'Sistem Muskuloskeletal • Fraktur',
+            pertanyaan: 'Seorang laki-laki berusia 28 tahun dibawa ke IGD setelah mengalami kecelakaan lalu lintas dengan fraktur tertutup 1/3 tengah tibia dekstra. Empat jam setelah pemasangan gips sirkuler, pasien mengeluh nyeri hebat yang tidak berkurang meskipun telah diberikan analgesik, disertai rasa kesemutan (parestesia) pada jari-jari kaki kanan, kulit kaki tampak pucat, dan pengisian kapiler > 3 detik. Apakah tindakan keperawatan kolaboratif paling prioritas pada kasus tersebut?',
+            opsi: {
+              A: 'Meninggikan ekstremitas kanan setinggi 45 derajat di atas bantal',
+              B: 'Melakukan kompres dingin di atas permukaan gips untuk mengurangi edema',
+              C: 'Melaporkan segera kepada dokter untuk tindakan bivalving atau pelepasan gips',
+              D: 'Menganjurkan pasien melakukan latihan ROM aktif pada jari-jari kaki kanan',
+              E: 'Memberikan tambahan dosis analgesik opioid sesuai protokol nyeri akut'
+            },
+            kunci: 'C'
+          },
+          {
+            nomor: 2,
+            tag: 'Sistem Muskuloskeletal • Dislokasi',
+            pertanyaan: 'Seorang mahasiswa atlet bola voli berusia 21 tahun datang ke unit gawat darurat sambil memegangi lengan kanannya setelah terjatuh dengan posisi bahu terabduksi dan rotasi eksternal. Hasil inspeksi menunjukkan kontur bahu kanan tampak rata (hilangnya bentuk bulat deltoid), nyeri hebat skala 8/10 saat digerakkan, dan teraba kaput humerus di area anterior aksila. Apakah diagnosis keperawatan (SDKI) yang paling tepat dirumuskan sebelum tindakan reduksi dilakukan?',
+            opsi: {
+              A: 'Risiko Disfungsi Neurovaskular Perifer berhubungan dengan kompresi pleksus brakialis',
+              B: 'Nyeri Akut berhubungan dengan agen pencedera fisik (dislokasi sendi glenohumeral)',
+              C: 'Gangguan Integritas Jaringan berhubungan dengan tindakan pembedahan ortopedi',
+              D: 'Defisit Perawatan Diri berhubungan dengan kelemahan neuromuskular kronis',
+              E: 'Intoleransi Aktivitas berhubungan dengan ketidakseimbangan suplai oksigen'
+            },
+            kunci: 'B'
+          },
+          {
+            nomor: 3,
+            tag: 'Sistem Integumen • Luka Bakar (Resusitasi Cairan)',
+            pertanyaan: 'Seorang pasien laki-laki berusia 40 tahun dengan berat badan 50 kg dirawat di ruang resusitasi luka bakar akibat tersiram air panas. Berdasarkan pengkajian Rule of Nines, luas luka bakar derajat II mencapai 36% TBSA. Menggunakan Formula Parkland (4 mL/kgBB/%TBSA), berapakah volume cairan Ringer Laktat yang harus diberikan pada 8 jam pertama sejak waktu kejadian luka bakar?',
+            opsi: {
+              A: '1.800 mL',
+              B: '2.400 mL',
+              C: '3.600 mL',
+              D: '5.400 mL',
+              E: '7.200 mL'
+            },
+            kunci: 'C'
+          },
+          {
+            nomor: 4,
+            tag: 'Sistem Integumen • Luka Bakar (Evaluasi Perfusi)',
+            pertanyaan: 'Pada fase akut (48–72 jam pertama) pasca luka bakar mayor derajat II–III seluas 45% TBSA, terjadi peningkatan permeabilitas kapiler masif yang menyebabkan perpindahan cairan intravaskular ke ruang interstisial. Parameter klinis utama yang harus dipantau perawat setiap jam untuk menilai keadekuatan perfusi organ dan keberhasilan resusitasi cairan pada pasien dewasa adalah...',
+            opsi: {
+              A: 'Peningkatan kadar hemoglobin dan hematokrit serum',
+              B: 'Haluaran urin (urine output) minimal 0,5 – 1 mL/kgBB/jam',
+              C: 'Penurunan berat badan harian sebesar 1 – 2 kg per hari',
+              D: 'Suhu tubuh aksila bertahan pada rentang 37,5°C – 38,0°C',
+              E: 'Frekuensi napas menurun hingga di bawah 12 kali/menit'
+            },
+            kunci: 'B'
+          },
+          {
+            nomor: 5,
+            tag: 'Sistem Persepsi Sensori • Glaukoma Akut',
+            pertanyaan: 'Seorang perempuan berusia 58 tahun datang ke IGD dengan keluhan nyeri kepala dan nyeri mata kiri yang sangat hebat secara mendadak sejak 2 jam lalu, disertai mual, muntah, pandangan kabur, serta melihat lingkaran pelangi (halo) di sekitar lampu. Pemeriksaan menunjukkan kornea keruh, pupil midriasis non-reaktif, dan tekanan intraokular (TIO) 48 mmHg. Obat tetes mata manakah yang menjadi KONTRAINDIKASI mutlak pada kondisi pasien ini?',
+            opsi: {
+              A: 'Pilokarpin 2% (miotikum)',
+              B: 'Timolol maleat 0,5% (beta-blocker)',
+              C: 'Atropin sulfat 1% (midriatikum/antikolinergik)',
+              D: 'Asetazolamid oral (inhibitor karbonat anhidrase)',
+              E: 'Brimonidin tartrat (agonis alfa-2 adrenergik)'
+            },
+            kunci: 'C'
+          },
+          {
+            nomor: 6,
+            tag: 'Sistem Persepsi Sensori • Vertigo',
+            pertanyaan: 'Seorang perempuan berusia 46 tahun dirawat dengan diagnosis Benign Paroxysmal Positional Vertigo (BPPV). Pasien mengeluh pusing berputar hebat setiap kali mengubah posisi kepala atau bangkit dari tempat tidur, disertai mual dan nistagmus horizontal. Berdasarkan standar intervensi keperawatan (SIKI), manakah tindakan keperawatan prioritas untuk mencegah komplikasi cedera pada pasien tersebut?',
+            opsi: {
+              A: 'Menganjurkan pasien berdiri cepat dari tempat tidur agar adaptasi vestibular terbentuk',
+              B: 'Memasang pengaman sisi tempat tidur (side rails) dan menganjurkan perubahan posisi secara perlahan',
+              C: 'Melakukan irigasi liang telinga menggunakan cairan NaCl 0,9% hangat bertekanan tinggi',
+              D: 'Memberikan diet tinggi natrium dan kafein untuk meningkatkan tekanan endolimfe',
+              E: 'Menempatkan pasien di ruangan dengan pencahayaan terang benderang sepanjang malam'
+            },
+            kunci: 'B'
+          },
+          {
+            nomor: 7,
+            tag: 'Sistem Persarafan • Stroke Akut',
+            pertanyaan: 'Seorang laki-laki berusia 64 tahun dibawa ke IGD karena mengalami kelemahan mendadak pada ekstremitas kanan dan afasia motorik sejak 1,5 jam yang lalu. Tekanan darah 170/95 mmHg, Nadi 84 x/menit, GCS E4V2M6. Sebelum dokter memutuskan pemberian terapi trombolitik (rt-PA) atau antiplatelet, pemeriksaan penunjang diagnostik pertama yang wajib segera dilakukan adalah...',
+            opsi: {
+              A: 'Elektroensefalografi (EEG) untuk mendeteksi fokus kejang',
+              B: 'Pungsi lumbal untuk menganalisis kadar protein cairan serebrospinal',
+              C: 'CT-Scan kepala non-kontras untuk membedakan stroke iskemik dan hemoragik',
+              D: 'Foto rontgen servikal AP/Lateral untuk menyingkirkan fraktur tulang leher',
+              E: 'Ultrasonografi karotis untuk mengukur kecepatan aliran darah vena jugularis'
+            },
+            kunci: 'C'
+          },
+          {
+            nomor: 8,
+            tag: 'Sistem Persarafan • Meningitis & Tumor Otak',
+            pertanyaan: 'Seorang mahasiswa berusia 20 tahun dirawat di ruang isolasi dengan diagnosis meningitis bakterialis. Hasil pengkajian menunjukkan demam 39,2°C, nyeri kepala berat, fotofobia, kaku kuduk positif, serta tanda Kernig dan Brudzinski positif. Manakah paket intervensi keperawatan yang paling tepat untuk mencegah peningkatan tekanan intrakranial (TIK) sekaligus menjaga keselamatan pasien?',
+            opsi: {
+              A: 'Posisikan kepala datar (0 derajat), tingkatkan pencahayaan ruangan, dan lakukan fisioterapi dada agresif',
+              B: 'Elevasi kepala tempat tidur 30 derajat dengan posisi leher netral, redupkan cahaya ruangan, dan minimalkan stimulus lingkungan',
+              C: 'Anjurkan pasien melakukan manuver Valsava saat buang air besar untuk melancarkan aliran vena serebral',
+              D: 'Berikan kompres hangat pada area dahi sambil melakukan fleksi leher pasif setiap 2 jam',
+              E: 'Batasi pemberian antibiotik intravena hingga hasil kultur cairan serebrospinal selesai dalam 5 hari'
+            },
+            kunci: 'B'
+          }
+        ],
+        esaiQuestions: [
+          {
+            nomor: 1,
+            tag: 'Sistem Integumen (Luka Bakar)',
+            teks: 'Kasus 1:\nTn. A (30 tahun, BB 50 kg) dibawa ke IGD karena luka bakar tersiram air panas pada seluruh dada dan perut bagian depan (18%) serta seluruh lengan kanan (9%). Pasien mengeluh nyeri perih (skala 7/10), tampak lepuhan (bula) kemerahan, TD 100/70 mmHg, Nadi 104 x/menit.\n\nPertanyaan:\n1. Hitung total luas luka bakar (%) dan kebutuhan cairan 24 jam pertama (Formula Parkland: 4 mL × BB × %Luka Bakar).\n2. Sebutkan 1 diagnosis keperawatan prioritas (SDKI).\n3. Tuliskan 2 intervensi keperawatan utama (SIKI) untuk kasus tersebut.'
+          },
+          {
+            nomor: 2,
+            tag: 'Sistem Persarafan (Stroke)',
+            teks: 'Kasus 2:\nNy. M (60 tahun) dirawat di ruang neurologi dengan keluhan kelemahan anggota gerak sebelah kiri sejak 3 jam lalu, bicara pelo, dan pusing. Pasien memiliki riwayat hipertensi tidak terkontrol. Hasil pemeriksaan: kesadaran compos mentis, TD 170/100 mmHg, kekuatan otot ekstremitas kiri bernilai 2, dan pasien tampak sulit menelan.\n\nPertanyaan:\n1. Tuliskan Data Subjektif (DS) dan Data Objektif (DO) utama dari kasus di atas.\n2. Sebutkan 1 diagnosis keperawatan prioritas (SDKI).\n3. Tuliskan 2 intervensi keperawatan utama (SIKI) untuk kasus tersebut.'
+          }
+        ]
+      }
+    ];
+
+    let examBank = JSON.parse(JSON.stringify(DEFAULT_EXAM_BANK));
+    let selectedExamForStudent = null;
+    let editingExamId = null;
+
+    // Status Sesi Ujian & Timer
+    let totalExamSeconds = 150 * 60;
+    let remainingSeconds = totalExamSeconds;
+    let isExamStarted = false;
+    let examStartTime = null;
+    let timerInterval = null;
+
+    // Helper Escape HTML
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Urutan Semester Indonesia agar rapi di dropdown
+    const SEMESTER_ORDER = [
+      'I (Satu)', 'II (Dua)', 'III (Tiga)', 'IV (Empat)',
+      'V (Lima)', 'VI (Enam)', 'VII (Tujuh)', 'VIII (Delapan)'
+    ];
+    function sortSemesters(list) {
+      return list.slice().sort((a, b) => {
+        const ia = SEMESTER_ORDER.findIndex((s) => s.toLowerCase() === a.toLowerCase());
+        const ib = SEMESTER_ORDER.findIndex((s) => s.toLowerCase() === b.toLowerCase());
+        if (ia !== -1 && ib !== -1) return ia - ib;
+        if (ia !== -1) return -1;
+        if (ib !== -1) return 1;
+        return a.localeCompare(b, 'id');
+      });
+    }
+
+    // Fallback berjenjang untuk Logo UNIQHBA
+    let logoAttempt = 0;
+    function handleLogoFallback(imgEl) {
+      logoAttempt++;
+      if (logoAttempt === 1) {
+        imgEl.src = 'https://www.uniqhba.ac.id/images/logo.png';
+      } else {
+        imgEl.classList.add('hidden');
+        const svgEl = document.getElementById('uniqhba-logo-svg');
+        if (svgEl) svgEl.classList.remove('hidden');
+      }
+    }
+
+    function getActiveSupabaseCredentials() {
+      const hasHardcoded =
+        DEFAULT_SUPABASE_URL &&
+        DEFAULT_SUPABASE_ANON_KEY &&
+        DEFAULT_SUPABASE_URL.startsWith('http') &&
+        !DEFAULT_SUPABASE_URL.includes('GANTI_URL_SUPABASE_DI_SINI') &&
+        !DEFAULT_SUPABASE_URL.includes('YOUR_PROJECT_ID') &&
+        !DEFAULT_SUPABASE_ANON_KEY.includes('GANTI_ANON_KEY_SUPABASE_DI_SINI') &&
+        !DEFAULT_SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_KEY');
+
+      if (hasHardcoded) {
+        return { url: DEFAULT_SUPABASE_URL.trim(), key: DEFAULT_SUPABASE_ANON_KEY.trim() };
+      }
+
+      const savedUrl = localStorage.getItem('uniqhba_sb_url');
+      const savedKey = localStorage.getItem('uniqhba_sb_key');
+      const url = savedUrl && savedUrl.startsWith('http') ? savedUrl : DEFAULT_SUPABASE_URL;
+      const key = savedKey && savedKey.length > 20 ? savedKey : DEFAULT_SUPABASE_ANON_KEY;
+      return { url, key };
+    }
+
+    // Inisialisasi Klien Supabase
+    function initSupabase() {
+      const statusDot = document.getElementById('status-dot');
+      const statusText = document.getElementById('db-status-text');
+      const { url, key } = getActiveSupabaseCredentials();
+
+      if (
+        typeof window.supabase !== 'undefined' &&
+        url &&
+        key &&
+        url.startsWith('http') &&
+        !url.includes('GANTI_URL_SUPABASE_DI_SINI') &&
+        !url.includes('YOUR_PROJECT_ID') &&
+        !key.includes('GANTI_ANON_KEY_SUPABASE_DI_SINI') &&
+        !key.includes('YOUR_SUPABASE_ANON_KEY')
+      ) {
+        try {
+          supabaseClient = window.supabase.createClient(url, key);
+          isSupabaseReady = true;
+          statusDot.className = 'inline-block w-2.5 h-2.5 rounded-full bg-emerald-400';
+          statusText.textContent = 'Terhubung ke Server Ujian UNIQHBA';
+        } catch (err) {
+          console.error('Supabase init error:', err);
+          isSupabaseReady = false;
+          statusDot.className = 'inline-block w-2.5 h-2.5 rounded-full bg-red-400';
+          statusText.textContent = 'Koneksi Database Gagal';
+        }
+      } else {
+        isSupabaseReady = false;
+        statusDot.className = 'inline-block w-2.5 h-2.5 rounded-full bg-emerald-400';
+        statusText.innerHTML = 'Ujian Online &bull; UNIQHBA';
+      }
+    }
+
+    function toggleDbConfigBox() {
+      const box = document.getElementById('db-config-box');
+      box.classList.toggle('hidden');
+      const { url, key } = getActiveSupabaseCredentials();
+      if (!url.includes('GANTI_URL_SUPABASE_DI_SINI') && !url.includes('YOUR_PROJECT_ID')) {
+        document.getElementById('cfg-supabase-url').value = url;
+      }
+      if (!key.includes('GANTI_ANON_KEY_SUPABASE_DI_SINI') && !key.includes('YOUR_SUPABASE_ANON_KEY')) {
+        document.getElementById('cfg-supabase-key').value = key;
+      }
+    }
+
+    async function saveSupabaseConfigFromUI() {
+      const url = document.getElementById('cfg-supabase-url').value.trim();
+      const key = document.getElementById('cfg-supabase-key').value.trim();
+      if (!url.startsWith('https://') || key.length < 20) {
+        alert('Masukkan Project URL (https://...) dan Anon Public Key Supabase yang valid.');
+        return;
+      }
+      localStorage.setItem('uniqhba_sb_url', url);
+      localStorage.setItem('uniqhba_sb_key', key);
+      initSupabase();
+      alert('Konfigurasi Supabase berhasil disimpan!');
+      await loadExamBankFromStorageOrSupabase();
+      loadResultsFromSupabase();
+    }
+
+    // =========================================================================
+    // 3. MUAT & SINKRONISASI BANK MATA KULIAH (LOCALSTORAGE + SUPABASE)
+    // =========================================================================
+    async function loadExamBankFromStorageOrSupabase() {
+      // 1. Cek localStorage
+      try {
+        const localBankRaw = localStorage.getItem(LOCAL_BANK_KEY);
+        if (localBankRaw) {
+          const parsedBank = JSON.parse(localBankRaw);
+          if (Array.isArray(parsedBank) && parsedBank.length > 0) {
+            examBank = parsedBank;
+          }
+        } else {
+          // Migrasi otomatis jika ada konfigurasi versi 1 sebelumnya
+          const legacyRaw = localStorage.getItem(LOCAL_LEGACY_KEY);
+          if (legacyRaw) {
+            const legacyCfg = JSON.parse(legacyRaw);
+            if (legacyCfg && legacyCfg.mataKuliah) {
+              examBank = [Object.assign({ id: 'mk_migrated_1', tokenUjian: '' }, legacyCfg)];
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Gagal membaca bank ujian lokal:', e);
+      }
+
+      // 2. Cek Supabase untuk sinkronisasi otomatis ke semua HP mahasiswa
+      if (isSupabaseReady && supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient
+            .from(SUPABASE_CONFIG_TABLE)
+            .select('config')
+            .eq('id', BANK_CONFIG_ID)
+            .maybeSingle();
+
+          if (!error && data && data.config && Array.isArray(data.config.exams) && data.config.exams.length > 0) {
+            examBank = data.config.exams;
+            localStorage.setItem(LOCAL_BANK_KEY, JSON.stringify(examBank));
+          } else {
+            // Cek legacy row di Supabase jika belum ada exam_bank_v2
+            const { data: legacyData } = await supabaseClient
+              .from(SUPABASE_CONFIG_TABLE)
+              .select('config')
+              .eq('id', LEGACY_CONFIG_ID)
+              .maybeSingle();
+            if (legacyData && legacyData.config && legacyData.config.mataKuliah) {
+              examBank = [Object.assign({ id: 'mk_sb_1', tokenUjian: '' }, legacyData.config)];
+              localStorage.setItem(LOCAL_BANK_KEY, JSON.stringify(examBank));
+            }
+          }
+        } catch (err) {
+          console.info('Menggunakan bank ujian lokal (tabel pengaturan_ujian belum dibuat di Supabase).');
+        }
+      }
+
+      populateStudentSemesterDropdown();
+      renderLecturerExamBankList();
+    }
+
+    async function refreshExamBankFromServer() {
+      await loadExamBankFromStorageOrSupabase();
+      alert('Daftar semester dan mata kuliah berhasil diperbarui.');
+    }
+
+    async function syncExamBankToSupabase() {
+      localStorage.setItem(LOCAL_BANK_KEY, JSON.stringify(examBank));
+      if (!isSupabaseReady || !supabaseClient) {
+        return 'Tersimpan di browser perangkat ini (hubungkan Supabase agar tampil di HP semua mahasiswa).';
+      }
+      try {
+        const { error } = await supabaseClient
+          .from(SUPABASE_CONFIG_TABLE)
+          .upsert([{
+            id: BANK_CONFIG_ID,
+            config: { exams: examBank },
+            updated_at: new Date().toISOString()
+          }]);
+        if (!error) {
+          return 'Tersimpan & disinkronkan ke server Supabase untuk seluruh mahasiswa!';
+        }
+        return 'Tersimpan di browser ini (jalankan SQL tabel pengaturan_ujian di Supabase untuk sinkron online).';
+      } catch (err) {
+        return 'Tersimpan di browser ini.';
+      }
+    }
+
+    // =========================================================================
+    // 4. ALUR HALAMAN MULAI MAHASISWA: PILIH SEMESTER -> MATA KULIAH -> TOKEN
+    // =========================================================================
+    function populateStudentSemesterDropdown() {
+      const semSelect = document.getElementById('semester');
+      if (!semSelect) return;
+
+      const prevSem = semSelect.value;
+      const uniqueSemesters = sortSemesters([...new Set(examBank.map((item) => item.semester).filter(Boolean))]);
+
+      semSelect.innerHTML = '<option value="" disabled selected>-- Pilih Semester (' + uniqueSemesters.length + ' Tersedia) --</option>';
+      uniqueSemesters.forEach((sem) => {
+        const count = examBank.filter((x) => x.semester === sem).length;
+        const opt = document.createElement('option');
+        opt.value = sem;
+        opt.textContent = 'Semester ' + sem + ' (' + count + ' Mata Kuliah)';
+        semSelect.appendChild(opt);
+      });
+
+      if (prevSem && uniqueSemesters.includes(prevSem)) {
+        semSelect.value = prevSem;
+        handleSemesterSelectChange();
+      } else {
+        resetCourseSelectionPreview();
+      }
+    }
+
+    function handleSemesterSelectChange() {
+      const semSelect = document.getElementById('semester');
+      const mkSelect = document.getElementById('pilih_matkul');
+      const chosenSem = semSelect.value;
+
+      const prevCourseId = mkSelect.value;
+      const matchingCourses = examBank.filter((item) => item.semester === chosenSem);
+
+      mkSelect.innerHTML = '';
+      if (matchingCourses.length === 0) {
+        mkSelect.disabled = true;
+        mkSelect.innerHTML = '<option value="" disabled selected>-- Tidak ada mata kuliah pada semester ini --</option>';
+        resetCourseSelectionPreview();
+        return;
+      }
+
+      mkSelect.disabled = false;
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      placeholder.textContent = '-- Pilih Mata Kuliah (' + matchingCourses.length + ' Ujian) --';
+      mkSelect.appendChild(placeholder);
+
+      matchingCourses.forEach((exam) => {
+        const pgLen = (exam.pgQuestions || []).length;
+        const esaiLen = (exam.esaiQuestions || []).length;
+        const lockLabel = exam.tokenUjian && exam.tokenUjian.trim() ? ' [Terkunci Password]' : '';
+        const opt = document.createElement('option');
+        opt.value = exam.id;
+        opt.textContent = exam.mataKuliah + ' — ' + exam.judulUjian + ' (' + (pgLen + esaiLen) + ' Soal)' + lockLabel;
+        mkSelect.appendChild(opt);
+      });
+
+      // Jika hanya ada 1 mata kuliah pada semester tersebut, otomatis pilih agar praktis
+      if (matchingCourses.length === 1) {
+        mkSelect.value = matchingCourses[0].id;
+        handleCourseSelectChange();
+      } else if (prevCourseId && matchingCourses.some((c) => c.id === prevCourseId)) {
+        mkSelect.value = prevCourseId;
+        handleCourseSelectChange();
+      } else {
+        resetCourseSelectionPreview();
+      }
+
+      saveDraftToLocal();
+    }
+
+    function resetCourseSelectionPreview() {
+      selectedExamForStudent = null;
+      document.getElementById('exam-meta-grid').classList.add('hidden');
+      document.getElementById('course-token-box').classList.add('hidden');
+      document.getElementById('course-open-badge').classList.add('hidden');
+      document.getElementById('input_course_token').value = '';
+      document.getElementById('exam-semester-badge').textContent = 'Portal Ujian Online Terpadu';
+      document.getElementById('exam-title-display').textContent = 'Silakan Pilih Semester & Mata Kuliah Ujian';
+      document.getElementById('exam-course-display').textContent = 'Lengkapi identitas peserta dan pilih jadwal ujian pada formulir di bawah ini';
+      if (!isExamStarted) {
+        document.getElementById('timer-display').textContent = '--:--';
+        document.getElementById('timer-status-badge').textContent = 'Pilih MK';
+      }
+    }
+
+    function handleCourseSelectChange() {
+      const mkId = document.getElementById('pilih_matkul').value;
+      const exam = examBank.find((item) => item.id === mkId);
+      if (!exam) {
+        resetCourseSelectionPreview();
+        return;
+      }
+
+      selectedExamForStudent = exam;
+      updateKopHeaderForExam(exam);
+
+      const hasToken = Boolean(exam.tokenUjian && exam.tokenUjian.trim());
+      const tokenBox = document.getElementById('course-token-box');
+      const openBadge = document.getElementById('course-open-badge');
+
+      if (hasToken) {
+        tokenBox.classList.remove('hidden');
+        openBadge.classList.add('hidden');
+        document.getElementById('start-exam-hint').innerHTML =
+          'Masukkan <strong>Password / Token Mata Kuliah</strong> di atas, lalu tekan tombol <strong>Mulai Ujian</strong> (' + exam.durasiMenit + ' menit).';
+      } else {
+        tokenBox.classList.add('hidden');
+        openBadge.classList.remove('hidden');
+        document.getElementById('start-exam-hint').innerHTML =
+          'Setelah menekan tombol <strong>Mulai Ujian</strong>, soal <strong>' + escapeHtml(exam.mataKuliah) + '</strong> akan tampil dan waktu <strong>' + exam.durasiMenit + ' menit</strong> dimulai.';
+      }
+
+      saveDraftToLocal();
+    }
+
+    function toggleCourseTokenVisibility() {
+      const input = document.getElementById('input_course_token');
+      if (!input) return;
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function updateKopHeaderForExam(cfg) {
+      const pgCount = Array.isArray(cfg.pgQuestions) ? cfg.pgQuestions.length : 0;
+      const esaiCount = Array.isArray(cfg.esaiQuestions) ? cfg.esaiQuestions.length : 0;
+
+      document.title = cfg.judulUjian + ' - ' + cfg.mataKuliah + ' - UNIQHBA';
+      document.getElementById('exam-faculty-prodi-display').innerHTML =
+        'Fakultas Kesehatan &bull; Program Studi ' + escapeHtml(cfg.prodi || 'S1 Keperawatan');
+      document.getElementById('exam-semester-badge').innerHTML =
+        'Semester ' + escapeHtml(cfg.semester) + ' &bull; Evaluasi Pembelajaran';
+      document.getElementById('exam-title-display').textContent = cfg.judulUjian;
+      document.getElementById('exam-course-display').textContent = 'Mata Kuliah: ' + cfg.mataKuliah;
+
+      document.getElementById('exam-meta-grid').classList.remove('hidden');
+      document.getElementById('exam-materi-display').textContent = cfg.cakupanMateri || '-';
+
+      let formatText = '';
+      if (pgCount > 0 && esaiCount > 0) {
+        formatText = pgCount + ' Pilihan Ganda & ' + esaiCount + ' Esai';
+      } else if (pgCount > 0) {
+        formatText = pgCount + ' Pilihan Ganda';
+      } else {
+        formatText = esaiCount + ' Soal Esai';
+      }
+      document.getElementById('exam-format-display').textContent = formatText;
+      document.getElementById('exam-time-bobot-display').innerHTML =
+        cfg.durasiMenit + ' Menit &bull; Bobot ' + escapeHtml(cfg.bobotRps || '25%');
+
+      const prodiInput = document.getElementById('prodi');
+      if (prodiInput && (!prodiInput.value || prodiInput.dataset.autoSet !== 'false')) {
+        prodiInput.value = cfg.prodi || 'S1 Keperawatan';
+      }
+
+      totalExamSeconds = (Number(cfg.durasiMenit) || 150) * 60;
+      if (!isExamStarted) {
+        remainingSeconds = totalExamSeconds;
+        updateTimerDisplay();
+        document.getElementById('timer-status-badge').textContent = 'Belum Mulai';
+      }
+    }
+
+    function renderQuestionsForExam(cfg) {
+      const pgCount = Array.isArray(cfg.pgQuestions) ? cfg.pgQuestions.length : 0;
+      const esaiCount = Array.isArray(cfg.esaiQuestions) ? cfg.esaiQuestions.length : 0;
+      const totalSoal = pgCount + esaiCount;
+
+      // Render Soal Pilihan Ganda
+      const pgSection = document.getElementById('pg-section-box');
+      const pgContainer = document.getElementById('pg-container');
+      if (pgCount === 0) {
+        pgSection.classList.add('hidden');
+        pgContainer.innerHTML = '';
+      } else {
+        pgSection.classList.remove('hidden');
+        const poinPerPg = Math.round((Number(cfg.bobotPg || 80) / pgCount) * 100) / 100;
+        document.getElementById('pg-section-title').textContent =
+          'Bagian I: Soal Pilihan Ganda (Nomor 1 – ' + pgCount + ')';
+        document.getElementById('pg-section-bobot').textContent =
+          'Bobot: ' + cfg.bobotPg + ' Poin (' + poinPerPg + ' Poin / Soal)';
+
+        pgContainer.innerHTML = cfg.pgQuestions
+          .map((q, idx) => {
+            const num = idx + 1;
+            const badgeText = q.tag
+              ? 'Soal No. ' + num + ' &bull; ' + escapeHtml(q.tag)
+              : 'Soal No. ' + num;
+
+            const opsiKeys = Object.keys(q.opsi || {});
+            const optionsHtml = opsiKeys
+              .map((huruf) => {
+                return (
+                  '<label class="option-card select-none">' +
+                    '<input type="radio" name="pg_' + num + '" value="' + escapeHtml(huruf) + '" required class="sr-only" onchange="saveDraftToLocal()" />' +
+                    '<span class="option-badge w-7 h-7 rounded-lg border border-slate-300 bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">' + escapeHtml(huruf) + '</span>' +
+                    '<span class="text-sm text-slate-800 leading-relaxed">' + escapeHtml(q.opsi[huruf]) + '</span>' +
+                  '</label>'
+                );
+              })
+              .join('');
+
+            return (
+              '<article class="' + (idx < pgCount - 1 ? 'border-b border-slate-100 pb-7' : 'pb-1') + '">' +
+                '<div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">' +
+                  '<span class="inline-flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">' +
+                    badgeText +
+                  '</span>' +
+                '</div>' +
+                '<p class="text-sm sm:text-base text-slate-900 font-medium leading-relaxed mb-4 whitespace-pre-line">' +
+                  num + '. ' + escapeHtml(q.pertanyaan) +
+                '</p>' +
+                '<div class="grid grid-cols-1 gap-2.5">' + optionsHtml + '</div>' +
+              '</article>'
+            );
+          })
+          .join('');
+      }
+
+      // Render Soal Esai
+      const esaiSection = document.getElementById('esai-section-box');
+      const esaiContainer = document.getElementById('esai-container');
+      if (esaiCount === 0) {
+        esaiSection.classList.add('hidden');
+        esaiContainer.innerHTML = '';
+      } else {
+        esaiSection.classList.remove('hidden');
+        const startNo = pgCount + 1;
+        const endNo = pgCount + esaiCount;
+        const poinPerEsai = Math.round((Number(cfg.bobotEsai || 20) / esaiCount) * 100) / 100;
+        const romawi = pgCount > 0 ? 'Bagian II' : 'Bagian I';
+        const secNum = pgCount > 0 ? '3' : '2';
+
+        esaiSection.querySelector('.w-8.h-8').textContent = secNum;
+        document.getElementById('esai-section-title').textContent =
+          romawi + ': Soal Esai / Studi Kasus (Nomor ' + startNo + (esaiCount > 1 ? ' – ' + endNo : '') + ')';
+        document.getElementById('esai-section-bobot').textContent =
+          'Bobot: ' + cfg.bobotEsai + ' Poin (' + poinPerEsai + ' Poin / Soal)';
+
+        esaiContainer.innerHTML = cfg.esaiQuestions
+          .map((eq, idx) => {
+            const esaiIdx = idx + 1;
+            const globalNo = pgCount + esaiIdx;
+            const badgeLabel = eq.tag
+              ? 'Soal Esai ' + esaiIdx + ' (No. ' + globalNo + ') &bull; ' + escapeHtml(eq.tag)
+              : 'Soal Esai ' + esaiIdx + ' (No. ' + globalNo + ')';
+
+            return (
+              '<div class="border border-slate-200 rounded-2xl p-5 bg-slate-50/70">' +
+                '<div class="flex flex-wrap items-center justify-between gap-2 mb-3">' +
+                  '<span class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-emerald-800 text-white px-3 py-1 rounded-md">' +
+                    badgeLabel +
+                  '</span>' +
+                '</div>' +
+                '<div class="bg-white border border-slate-200 rounded-xl p-4 text-sm leading-relaxed text-slate-800 mb-3 whitespace-pre-line">' +
+                  escapeHtml(eq.teks) +
+                '</div>' +
+                '<label for="jawaban_askep_' + esaiIdx + '" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">' +
+                  'Jawaban Soal No. ' + globalNo + ' <span class="text-red-500">*</span>' +
+                '</label>' +
+                '<textarea id="jawaban_askep_' + esaiIdx + '" name="jawaban_askep_' + esaiIdx + '" rows="6" required oninput="saveDraftToLocal()" ' +
+                  'placeholder="Tuliskan jawaban Anda secara sistematis di sini..." ' +
+                  'class="w-full rounded-xl border border-slate-300 bg-white p-4 text-sm leading-relaxed focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none transition"></textarea>' +
+              '</div>'
+            );
+          })
+          .join('');
+      }
+
+      document.getElementById('submit-reminder-title').textContent =
+        'Pastikan seluruh identitas dan ' + totalSoal + ' soal (' + cfg.mataKuliah + ') telah terisi lengkap.';
+    }
+
+    // =========================================================================
+    // 5. BANK MATA KULIAH, PASSWORD MK & COPY-PASTE PARSER (PANEL DOSEN)
+    // =========================================================================
+    function renderLecturerExamBankList() {
+      const container = document.getElementById('exam-bank-list');
+      if (!container) return;
+
+      if (!examBank || examBank.length === 0) {
+        container.innerHTML = '<p class="text-xs text-emerald-200 col-span-2">Belum ada mata kuliah tersimpan. Klik "+ Tambah Mata Kuliah Baru" untuk membuat ujian.</p>';
+        return;
+      }
+
+      container.innerHTML = examBank
+        .map((exam) => {
+          const isEditing = exam.id === editingExamId;
+          const pgCount = (exam.pgQuestions || []).length;
+          const esaiCount = (exam.esaiQuestions || []).length;
+          const hasToken = Boolean(exam.tokenUjian && exam.tokenUjian.trim());
+
+          return (
+            '<div class="rounded-xl p-3.5 border transition ' +
+              (isEditing ? 'bg-emerald-900 border-amber-400 ring-1 ring-amber-400' : 'bg-emerald-900/60 border-emerald-800 hover:border-emerald-600') + '">' +
+              '<div class="flex items-start justify-between gap-2">' +
+                '<div>' +
+                  '<span class="inline-block text-[10px] font-bold uppercase tracking-wider bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded">' +
+                    'Semester ' + escapeHtml(exam.semester) + ' &bull; ' + escapeHtml(exam.judulUjian) +
+                  '</span>' +
+                  '<h6 class="font-bold text-sm text-white mt-1 leading-snug">' + escapeHtml(exam.mataKuliah) + '</h6>' +
+                '</div>' +
+                '<span class="shrink-0 text-[11px] font-mono font-bold px-2 py-1 rounded-lg ' +
+                  (hasToken ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' : 'bg-slate-800 text-slate-300') + '">' +
+                  (hasToken ? 'Password: ' + escapeHtml(exam.tokenUjian) : 'Tanpa Password') +
+                '</span>' +
+              '</div>' +
+              '<div class="mt-2.5 pt-2.5 border-t border-emerald-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">' +
+                '<span class="text-emerald-200">' + pgCount + ' PG, ' + esaiCount + ' Esai &bull; ' + exam.durasiMenit + ' Menit</span>' +
+                '<div class="flex items-center gap-1.5">' +
+                  '<button type="button" onclick="loadExamIntoEditor(\'' + escapeHtml(exam.id) + '\')" class="px-2.5 py-1 rounded-lg bg-white text-emerald-950 font-bold hover:bg-emerald-100">' +
+                    'Edit Soal &amp; MK' +
+                  '</button>' +
+                  '<button type="button" onclick="duplicateExamInBank(\'' + escapeHtml(exam.id) + '\')" class="px-2 py-1 rounded-lg bg-emerald-800 text-emerald-100 hover:bg-emerald-700" title="Duplikat MK">' +
+                    'Duplikat' +
+                  '</button>' +
+                  '<button type="button" onclick="deleteExamFromBank(\'' + escapeHtml(exam.id) + '\')" class="px-2 py-1 rounded-lg bg-red-900/70 text-red-200 hover:bg-red-800" title="Hapus MK">' +
+                    'Hapus' +
+                  '</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>'
+          );
+        })
+        .join('');
+    }
+
+    function formatConfigToRawText(cfg) {
+      const pgLines = (cfg.pgQuestions || []).map((q, idx) => {
+        const prefix = q.tag ? '[' + q.tag + '] ' : '';
+        const opts = Object.entries(q.opsi || {})
+          .map(([k, v]) => k + '. ' + v)
+          .join('\n');
+        return (idx + 1) + '. ' + prefix + q.pertanyaan + '\n' + opts + '\nKunci: ' + q.kunci;
+      });
+
+      const esaiLines = (cfg.esaiQuestions || []).map((eq, idx) => {
+        const prefix = eq.tag ? '[' + eq.tag + '] ' : '';
+        return (idx + 1) + '. ' + prefix + eq.teks;
+      });
+
+      return {
+        pgRaw: pgLines.join('\n\n'),
+        esaiRaw: esaiLines.join('\n\n')
+      };
+    }
+
+    function loadExamIntoEditor(examId) {
+      const cfg = examBank.find((e) => e.id === examId) || examBank[0];
+      if (!cfg) {
+        startNewExamForm();
+        return;
+      }
+      editingExamId = cfg.id;
+      document.getElementById('editor-mode-badge').textContent = 'Mode: Edit Mata Kuliah Tersimpan';
+      document.getElementById('editor-mode-badge').className = 'inline-block text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-md mb-1';
+      document.getElementById('editor-section-heading').textContent = 'A. Edit Mata Kuliah: ' + cfg.mataKuliah;
+
+      document.getElementById('set-judul-ujian').value = cfg.judulUjian || '';
+      document.getElementById('set-semester').value = cfg.semester || '';
+      document.getElementById('set-prodi').value = cfg.prodi || '';
+      document.getElementById('set-mata-kuliah').value = cfg.mataKuliah || '';
+      document.getElementById('set-token-ujian').value = cfg.tokenUjian || '';
+      document.getElementById('set-durasi-menit').value = cfg.durasiMenit || 150;
+      document.getElementById('set-cakupan-materi').value = cfg.cakupanMateri || '';
+      document.getElementById('set-bobot-rps').value = cfg.bobotRps || '25%';
+      document.getElementById('set-bobot-pg').value = cfg.bobotPg !== undefined ? cfg.bobotPg : 80;
+      document.getElementById('set-bobot-esai').value = cfg.bobotEsai !== undefined ? cfg.bobotEsai : 20;
+
+      const formatted = formatConfigToRawText(cfg);
+      document.getElementById('raw-pg-editor').value = formatted.pgRaw;
+      document.getElementById('raw-esai-editor').value = formatted.esaiRaw;
+
+      renderLecturerExamBankList();
+      const editorSec = document.getElementById('exam-editor-section');
+      if (editorSec) editorSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function startNewExamForm() {
+      editingExamId = null;
+      document.getElementById('editor-mode-badge').textContent = 'Mode: Tambah Mata Kuliah Baru';
+      document.getElementById('editor-mode-badge').className = 'inline-block text-[11px] font-bold uppercase tracking-wider bg-amber-200 text-amber-950 px-2.5 py-0.5 rounded-md mb-1';
+      document.getElementById('editor-section-heading').textContent = 'A. Tambah Mata Kuliah, Semester & Password Baru';
+
+      document.getElementById('set-judul-ujian').value = 'Ujian Tengah Semester (UTS)';
+      document.getElementById('set-semester').value = '';
+      document.getElementById('set-prodi').value = 'S1 Keperawatan';
+      document.getElementById('set-mata-kuliah').value = '';
+      document.getElementById('set-token-ujian').value = '';
+      document.getElementById('set-durasi-menit').value = 120;
+      document.getElementById('set-cakupan-materi').value = '';
+      document.getElementById('set-bobot-rps').value = '25%';
+      document.getElementById('set-bobot-pg').value = 80;
+      document.getElementById('set-bobot-esai').value = 20;
+      document.getElementById('raw-pg-editor').value = '';
+      document.getElementById('raw-esai-editor').value = '';
+      document.getElementById('parsed-preview-box').classList.add('hidden');
+      document.getElementById('parse-status-summary').textContent = 'Isi identitas mata kuliah baru dan tempel soal pada kotak di bawah.';
+
+      generateRandomCourseToken();
+      renderLecturerExamBankList();
+      document.getElementById('set-semester').focus();
+    }
+
+    function generateRandomCourseToken() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = 'MK-';
+      for (let i = 0; i < 5; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      document.getElementById('set-token-ujian').value = code;
+    }
+
+    async function duplicateExamInBank(examId) {
+      const source = examBank.find((e) => e.id === examId);
+      if (!source) return;
+      const copy = JSON.parse(JSON.stringify(source));
+      copy.id = 'mk_' + Date.now();
+      copy.mataKuliah = source.mataKuliah + ' (Salinan)';
+      copy.tokenUjian = '';
+      examBank.push(copy);
+      await syncExamBankToSupabase();
+      populateStudentSemesterDropdown();
+      loadExamIntoEditor(copy.id);
+      alert('Mata kuliah berhasil diduplikat. Silakan ubah Semester, Nama Mata Kuliah, atau Password-nya.');
+    }
+
+    async function deleteExamFromBank(examId) {
+      const target = examBank.find((e) => e.id === examId);
+      if (!target) return;
+      if (!confirm('Hapus mata kuliah "' + target.mataKuliah + '" (Semester ' + target.semester + ') dari daftar ujian?')) return;
+      examBank = examBank.filter((e) => e.id !== examId);
+      await syncExamBankToSupabase();
+      populateStudentSemesterDropdown();
+      if (examBank.length > 0) {
+        loadExamIntoEditor(examBank[0].id);
+      } else {
+        startNewExamForm();
+      }
+    }
+
+    function parseMultipleChoiceText(rawText) {
+      const text = (rawText || '').replace(/\r\n/g, '\n').trim();
+      if (!text) return [];
+
+      const lines = text.split('\n');
+      const questions = [];
+      let currentQ = null;
+      let lastOptionKey = null;
+      const globalKeys = {};
+
+      const qStartRegex = /^\s*(?:Soal\s*)?(\d+)\s*[\.\)\:\-]\s+(.+)$/i;
+      const optRegex = /^\s*(\*)?\s*[\(\[]?([A-Ea-e])[\.\)\]\:\-]\s+(.+)$/;
+      const keyRegex = /^\s*(?:Kunci(?:\s*Jawaban)?|Jawaban(?:\s*Benar)?|Key)\s*[:=\-]\s*([A-Ea-e])\b/i;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        const keyMatch = trimmed.match(keyRegex);
+        if (keyMatch && currentQ) {
+          currentQ.kunci = keyMatch[1].toUpperCase();
+          lastOptionKey = null;
+          continue;
+        }
+
+        if (/^(?:Kunci\s*Jawaban\s*[:\-]?\s*)?(?:\d+\s*[\.\:\-\)]\s*[A-Ea-e]\s*[,;\s]+){2,}/i.test(trimmed)) {
+          const pairs = trimmed.matchAll(/(\d+)\s*[\.\:\-\)]\s*([A-Ea-e])/gi);
+          for (const m of pairs) {
+            globalKeys[Number(m[1])] = m[2].toUpperCase();
+          }
+          continue;
+        }
+
+        const optMatch = trimmed.match(optRegex);
+        if (optMatch && currentQ) {
+          const isStarred = Boolean(optMatch[1]);
+          const letter = optMatch[2].toUpperCase();
+          const optText = optMatch[3].trim();
+          currentQ.opsi[letter] = optText;
+          if (isStarred) {
+            currentQ.kunci = letter;
+          }
+          lastOptionKey = letter;
+          continue;
+        }
+
+        const qMatch = trimmed.match(qStartRegex);
+        if (qMatch) {
+          if (currentQ) questions.push(currentQ);
+          const qNum = Number(qMatch[1]);
+          let qBody = qMatch[2].trim();
+          let qTag = '';
+          const tagMatch = qBody.match(/^\[([^\]]+)\]\s*(.+)$/);
+          if (tagMatch) {
+            qTag = tagMatch[1].trim();
+            qBody = tagMatch[2].trim();
+          }
+          currentQ = {
+            nomor: qNum,
+            tag: qTag,
+            pertanyaan: qBody,
+            opsi: {},
+            kunci: ''
+          };
+          lastOptionKey = null;
+          continue;
+        }
+
+        if (currentQ) {
+          if (lastOptionKey && currentQ.opsi[lastOptionKey]) {
+            currentQ.opsi[lastOptionKey] += ' ' + trimmed;
+          } else {
+            currentQ.pertanyaan += '\n' + trimmed;
+          }
+        }
+      }
+
+      if (currentQ) questions.push(currentQ);
+
+      questions.forEach((q, idx) => {
+        if (!q.kunci && globalKeys[q.nomor]) {
+          q.kunci = globalKeys[q.nomor];
+        } else if (!q.kunci && globalKeys[idx + 1]) {
+          q.kunci = globalKeys[idx + 1];
+        }
+      });
+
+      return questions;
+    }
+
+    function parseEssayText(rawText) {
+      const text = (rawText || '').replace(/\r\n/g, '\n').trim();
+      if (!text) return [];
+
+      const blocks = text.split(/\n\s*\n+(?=\s*(?:Soal\s*(?:Esai\s*)?)?\d+\s*[\.\)\:\-]\s+)/i);
+      const essays = [];
+
+      blocks.forEach((block, idx) => {
+        let cleaned = block.trim();
+        if (!cleaned) return;
+        cleaned = cleaned.replace(/^\s*(?:Soal\s*(?:Esai\s*)?)?\d+\s*[\.\)\:\-]\s+/i, '');
+        let tag = '';
+        const tagMatch = cleaned.match(/^\[([^\]]+)\]\s*([\s\S]+)$/);
+        if (tagMatch) {
+          tag = tagMatch[1].trim();
+          cleaned = tagMatch[2].trim();
+        }
+        essays.push({
+          nomor: idx + 1,
+          tag: tag,
+          teks: cleaned
+        });
+      });
+
+      return essays;
+    }
+
+    function previewParsedExam() {
+      const rawPg = document.getElementById('raw-pg-editor').value;
+      const rawEsai = document.getElementById('raw-esai-editor').value;
+      const parsedPg = parseMultipleChoiceText(rawPg);
+      const parsedEsai = parseEssayText(rawEsai);
+
+      const summaryEl = document.getElementById('parse-status-summary');
+      const previewBox = document.getElementById('parsed-preview-box');
+      previewBox.classList.remove('hidden');
+
+      if (parsedPg.length === 0 && parsedEsai.length === 0) {
+        summaryEl.textContent = 'Belum ada soal yang terbaca. Pastikan nomor soal diawali angka dan titik (contoh: 1. Pertanyaan...).';
+        previewBox.innerHTML = '<p class="text-red-600 font-semibold">Tidak ada soal valid yang terdeteksi.</p>';
+        return;
+      }
+
+      const missingKeys = parsedPg.filter((q) => !q.kunci || !q.opsi[q.kunci]).map((q, i) => i + 1);
+      const incompleteOpts = parsedPg.filter((q) => Object.keys(q.opsi).length < 2).map((q, i) => i + 1);
+
+      let statusMsg = 'Terbaca: ' + parsedPg.length + ' Soal Pilihan Ganda & ' + parsedEsai.length + ' Soal Esai.';
+      if (missingKeys.length > 0) {
+        statusMsg += ' ⚠️ Kunci jawaban belum ada/tidak cocok pada PG No: ' + missingKeys.join(', ') + '.';
+      }
+      if (incompleteOpts.length > 0) {
+        statusMsg += ' ⚠️ Opsi jawaban kurang dari 2 pada PG No: ' + incompleteOpts.join(', ') + '.';
+      }
+      summaryEl.textContent = statusMsg;
+
+      let html = '';
+      parsedPg.forEach((q, idx) => {
+        const opsiCount = Object.keys(q.opsi).length;
+        const hasValidKey = q.kunci && q.opsi[q.kunci];
+        html +=
+          '<div class="p-2.5 rounded-lg border ' + (hasValidKey && opsiCount >= 2 ? 'border-slate-200 bg-slate-50' : 'border-red-300 bg-red-50') + '">' +
+            '<div class="flex items-center justify-between font-bold text-slate-800">' +
+              '<span>PG No. ' + (idx + 1) + ' (' + opsiCount + ' Opsi)</span>' +
+              '<span class="' + (hasValidKey ? 'text-emerald-700' : 'text-red-600') + '">' +
+                (hasValidKey ? 'Kunci: ' + q.kunci : '⚠️ Kunci Belum Diisi') +
+              '</span>' +
+            '</div>' +
+            '<p class="text-slate-600 mt-1 line-clamp-2">' + escapeHtml(q.pertanyaan) + '</p>' +
+          '</div>';
+      });
+
+      parsedEsai.forEach((eq, idx) => {
+        html +=
+          '<div class="p-2.5 rounded-lg border border-amber-200 bg-amber-50/50">' +
+            '<div class="font-bold text-amber-900">Esai No. ' + (idx + 1) + '</div>' +
+            '<p class="text-slate-700 mt-1 line-clamp-2">' + escapeHtml(eq.teks) + '</p>' +
+          '</div>';
+      });
+
+      previewBox.innerHTML = html;
+    }
+
+    async function saveCurrentExamToBank() {
+      const semester = document.getElementById('set-semester').value.trim();
+      const mataKuliah = document.getElementById('set-mata-kuliah').value.trim();
+      const judulUjian = document.getElementById('set-judul-ujian').value.trim() || 'Ujian Tengah Semester (UTS)';
+      const tokenUjian = document.getElementById('set-token-ujian').value.trim();
+      const prodi = document.getElementById('set-prodi').value.trim() || 'S1 Keperawatan';
+      const durasiMenit = parseInt(document.getElementById('set-durasi-menit').value, 10) || 150;
+      const cakupanMateri = document.getElementById('set-cakupan-materi').value.trim();
+      const bobotRps = document.getElementById('set-bobot-rps').value.trim() || '25%';
+      const bobotPg = parseFloat(document.getElementById('set-bobot-pg').value) || 0;
+      const bobotEsai = parseFloat(document.getElementById('set-bobot-esai').value) || 0;
+
+      if (!semester) {
+        alert('Semester wajib diisi (contoh: III (Tiga) atau V (Lima)).');
+        document.getElementById('set-semester').focus();
+        return;
+      }
+      if (!mataKuliah) {
+        alert('Nama Mata Kuliah tidak boleh kosong.');
+        document.getElementById('set-mata-kuliah').focus();
+        return;
+      }
+
+      const parsedPg = parseMultipleChoiceText(document.getElementById('raw-pg-editor').value);
+      const parsedEsai = parseEssayText(document.getElementById('raw-esai-editor').value);
+
+      if (parsedPg.length === 0 && parsedEsai.length === 0) {
+        alert('Minimal harus ada 1 soal Pilihan Ganda atau 1 soal Esai.');
+        return;
+      }
+
+      for (let i = 0; i < parsedPg.length; i++) {
+        const q = parsedPg[i];
+        if (Object.keys(q.opsi).length < 2) {
+          alert('Soal Pilihan Ganda No. ' + (i + 1) + ' harus memiliki minimal 2 pilihan jawaban (misal A dan B).');
+          previewParsedExam();
+          return;
+        }
+        if (!q.kunci || !q.opsi[q.kunci]) {
+          alert('Soal Pilihan Ganda No. ' + (i + 1) + ' belum memiliki Kunci Jawaban yang valid (tambahkan "Kunci: A/B/C/D/E" di bawah soal).');
+          previewParsedExam();
+          return;
+        }
+      }
+
+      const targetId = editingExamId || ('mk_' + Date.now());
+      const examObj = {
+        id: targetId,
+        judulUjian,
+        mataKuliah,
+        semester,
+        prodi,
+        tokenUjian,
+        cakupanMateri,
+        durasiMenit,
+        bobotRps,
+        bobotPg,
+        bobotEsai,
+        pgQuestions: parsedPg,
+        esaiQuestions: parsedEsai
+      };
+
+      const existingIdx = examBank.findIndex((e) => e.id === targetId);
+      if (existingIdx !== -1) {
+        examBank[existingIdx] = examObj;
+      } else {
+        examBank.push(examObj);
+      }
+      editingExamId = targetId;
+
+      const syncStatusText = await syncExamBankToSupabase();
+
+      renderLecturerExamBankList();
+      populateStudentSemesterDropdown();
+      previewParsedExam();
+
+      alert(
+        'Mata Kuliah & Soal Berhasil Disimpan!\n\n' +
+        'Semester: ' + semester + '\n' +
+        'Mata Kuliah: ' + mataKuliah + '\n' +
+        'Password/Token MK: ' + (tokenUjian ? tokenUjian : '(Tanpa Password)') + '\n' +
+        'Jumlah Soal: ' + parsedPg.length + ' PG & ' + parsedEsai.length + ' Esai\n' +
+        'Status: ' + syncStatusText
+      );
+    }
+
+    async function restoreDefaultExamBank() {
+      if (!confirm('Kembalikan daftar bank mata kuliah dan soal ke pengaturan bawaan awal?')) return;
+      examBank = JSON.parse(JSON.stringify(DEFAULT_EXAM_BANK));
+      localStorage.removeItem(LOCAL_BANK_KEY);
+      localStorage.removeItem(LOCAL_LEGACY_KEY);
+      await syncExamBankToSupabase();
+      populateStudentSemesterDropdown();
+      loadExamIntoEditor(examBank[0].id);
+      alert('Bank mata kuliah bawaan berhasil dipulihkan.');
+    }
+
+    function insertSamplePgTemplate() {
+      const editor = document.getElementById('raw-pg-editor');
+      const sample =
+        '1. [Sistem Kardiovaskular] Seorang laki-laki berusia 55 tahun dirawat dengan nyeri dada tipikal menjalar ke lengan kiri selama 30 menit. Pemeriksaan penunjang awal paling tepat untuk mendeteksi infark miokard akut adalah...\n' +
+        'A. Foto rontgen toraks AP\n' +
+        'B. Elektrokardiografi (EKG) 12 sadapan dan enzim Troponin\n' +
+        'C. Ultrasonografi abdomen\n' +
+        'D. Spirometri paru\n' +
+        'E. Elektroensefalografi (EEG)\n' +
+        'Kunci: B\n\n' +
+        '2. Seorang perempuan berusia 42 tahun mengalami sesak napas dengan frekuensi napas 30 x/menit dan SpO2 88%. Posisi paling tepat untuk memaksimalkan ekspansi paru pasien adalah...\n' +
+        'A. Supinasi datar\n' +
+        'B. Trendelenburg\n' +
+        'C. High Fowler (45-90 derajat)\n' +
+        'D. Sims kiri\n' +
+        'E. Litotomi\n' +
+        'Kunci: C';
+      editor.value = editor.value.trim() ? editor.value.trim() + '\n\n' + sample : sample;
+      previewParsedExam();
+    }
+
+    function insertSampleEsaiTemplate() {
+      const editor = document.getElementById('raw-esai-editor');
+      const sample =
+        '1. [Studi Kasus] Seorang pasien datang ke IGD dengan keluhan utama sesak napas memberat sejak 2 jam lalu, TD 150/90 mmHg, Nadi 102 x/menit, RR 28 x/menit.\n' +
+        'Pertanyaan:\n' +
+        'a. Tuliskan 1 diagnosis keperawatan prioritas berdasarkan SDKI!\n' +
+        'b. Tuliskan 2 intervensi keperawatan utama berdasarkan SIKI!';
+      editor.value = editor.value.trim() ? editor.value.trim() + '\n\n' + sample : sample;
+      previewParsedExam();
+    }
+
+    function switchLecturerTab(tabName) {
+      const tabRekap = document.getElementById('lecturer-tab-rekap');
+      const tabPengaturan = document.getElementById('lecturer-tab-pengaturan');
+      const btnRekap = document.getElementById('tab-btn-rekap');
+      const btnPengaturan = document.getElementById('tab-btn-pengaturan');
+
+      const activeClass = 'px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold bg-white text-emerald-800 border-t border-x border-slate-200 -mb-px transition';
+      const inactiveClass = 'px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold text-slate-600 hover:text-emerald-800 transition';
+
+      if (tabName === 'pengaturan') {
+        tabRekap.classList.add('hidden');
+        tabPengaturan.classList.remove('hidden');
+        btnPengaturan.className = activeClass;
+        btnRekap.className = inactiveClass;
+        renderLecturerExamBankList();
+        if (!editingExamId && examBank.length > 0) {
+          loadExamIntoEditor(examBank[0].id);
+        }
+      } else {
+        tabPengaturan.classList.add('hidden');
+        tabRekap.classList.remove('hidden');
+        btnRekap.className = activeClass;
+        btnPengaturan.className = inactiveClass;
+      }
+    }
+
+    // Set Tanggal & Waktu Otomatis (Format Indonesia)
+    function setDefaultDateTime() {
+      const now = new Date();
+      const options = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      };
+      const formatted = now.toLocaleDateString('id-ID', options) + ' WITA';
+      const inputEl = document.getElementById('waktu_ujian');
+      if (inputEl && !inputEl.value) {
+        inputEl.value = formatted;
+      }
+    }
+
+    // =========================================================================
+    // 6. MULAI SESI UJIAN, VALIDASI TOKEN MATA KULIAH & TIMER DINAMIS
+    // =========================================================================
+    function startExamSession() {
+      const namaEl = document.getElementById('nama_peserta');
+      const nimEl = document.getElementById('nim');
+      const prodiEl = document.getElementById('prodi');
+      const kelasEl = document.getElementById('kelas');
+      const semesterEl = document.getElementById('semester');
+      const matkulEl = document.getElementById('pilih_matkul');
+      const waktuEl = document.getElementById('waktu_ujian');
+
+      if (!namaEl.value.trim()) {
+        alert('Silakan isi Nama Lengkap Peserta terlebih dahulu sebelum memulai ujian.');
+        namaEl.focus();
+        return;
+      }
+      if (!nimEl.value.trim()) {
+        alert('Silakan isi Nomor Induk Mahasiswa (NIM) terlebih dahulu sebelum memulai ujian.');
+        nimEl.focus();
+        return;
+      }
+      if (!prodiEl.value.trim()) {
+        alert('Silakan isi Program Studi terlebih dahulu.');
+        prodiEl.focus();
+        return;
+      }
+      if (!kelasEl.value) {
+        alert('Silakan pilih Kelas terlebih dahulu.');
+        kelasEl.focus();
+        return;
+      }
+      if (!semesterEl.value) {
+        alert('Silakan pilih Semester terlebih dahulu.');
+        semesterEl.focus();
+        return;
+      }
+      if (!matkulEl.value || !selectedExamForStudent) {
+        alert('Silakan pilih Mata Kuliah yang akan diujikan terlebih dahulu.');
+        matkulEl.focus();
+        return;
+      }
+
+      // Validasi Password / Token Mata Kuliah (jika diset oleh dosen)
+      const expectedToken = (selectedExamForStudent.tokenUjian || '').trim();
+      if (expectedToken) {
+        const tokenInputEl = document.getElementById('input_course_token');
+        const enteredToken = (tokenInputEl ? tokenInputEl.value : '').trim();
+        if (!enteredToken) {
+          alert('Mata kuliah ini dikunci. Silakan masukkan Password / Token Mata Kuliah dari dosen pengampu.');
+          if (tokenInputEl) tokenInputEl.focus();
+          return;
+        }
+        if (enteredToken.toLowerCase() !== expectedToken.toLowerCase()) {
+          alert('Password / Token Mata Kuliah salah! Pastikan Anda memilih mata kuliah yang benar dan memasukkan kode akses dari dosen.');
+          if (tokenInputEl) {
+            tokenInputEl.value = '';
+            tokenInputEl.focus();
+          }
+          return;
+        }
+      }
+
+      if (!waktuEl.value.trim()) {
+        setDefaultDateTime();
+      }
+
+      isExamStarted = true;
+      if (!examStartTime) {
+        examStartTime = Date.now();
+      }
+
+      renderQuestionsForExam(selectedExamForStudent);
+      lockCourseSelectionFields(true);
+      revealExamQuestionsUI();
+      startExamTimer();
+      saveDraftToLocal();
+
+      const wrapper = document.getElementById('exam-questions-wrapper');
+      if (wrapper) {
+        wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function lockCourseSelectionFields(locked) {
+      const semEl = document.getElementById('semester');
+      const mkEl = document.getElementById('pilih_matkul');
+      const tokEl = document.getElementById('input_course_token');
+      if (semEl) semEl.disabled = locked;
+      if (mkEl) mkEl.disabled = locked;
+      if (tokEl) tokEl.disabled = locked;
+    }
+
+    function revealExamQuestionsUI() {
+      const startBar = document.getElementById('start-exam-bar');
+      const activeBanner = document.getElementById('exam-active-banner');
+      const questionsWrapper = document.getElementById('exam-questions-wrapper');
+      const statusBadge = document.getElementById('timer-status-badge');
+
+      if (startBar) startBar.classList.add('hidden');
+      if (activeBanner) {
+        activeBanner.classList.remove('hidden');
+        if (selectedExamForStudent) {
+          document.getElementById('active-course-banner-text').textContent =
+            'Sesi aktif: ' + selectedExamForStudent.mataKuliah + ' (Semester ' + selectedExamForStudent.semester + ')';
+        }
+      }
+      if (questionsWrapper) questionsWrapper.classList.remove('hidden');
+      if (statusBadge) {
+        statusBadge.textContent = 'Berjalan';
+        statusBadge.className = 'text-[10px] font-semibold bg-amber-400 text-emerald-950 px-2 py-0.5 rounded-full';
+      }
+    }
+
+    function updateTimerDisplay() {
+      const timerEl = document.getElementById('timer-display');
+      if (!timerEl) return;
+      const mins = Math.floor(remainingSeconds / 60);
+      const secs = remainingSeconds % 60;
+      timerEl.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+      if (remainingSeconds < 600) {
+        timerEl.classList.remove('text-amber-300');
+        timerEl.classList.add('text-red-300');
+      } else {
+        timerEl.classList.remove('text-red-300');
+        timerEl.classList.add('text-amber-300');
+      }
+    }
+
+    function startExamTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      updateTimerDisplay();
+
+      timerInterval = setInterval(() => {
+        if (!isExamStarted) return;
+        if (remainingSeconds <= 0) {
+          remainingSeconds = 0;
+          updateTimerDisplay();
+          clearInterval(timerInterval);
+          const statusBadge = document.getElementById('timer-status-badge');
+          if (statusBadge) {
+            statusBadge.textContent = 'Waktu Habis';
+            statusBadge.className = 'text-[10px] font-semibold bg-red-600 text-white px-2 py-0.5 rounded-full';
+          }
+          alert('Waktu ujian telah berakhir! Silakan segera klik tombol "Kirim Jawaban Ujian".');
+          return;
+        }
+        remainingSeconds--;
+        updateTimerDisplay();
+      }, 1000);
+    }
+
+    // Simpan Draft Otomatis di Browser Peserta
+    const DRAFT_KEY = 'uts_uniqhba_multimk_draft_v2';
+
+    function saveDraftToLocal() {
+      try {
+        const pgCount = selectedExamForStudent ? (selectedExamForStudent.pgQuestions || []).length : 0;
+        const esaiCount = selectedExamForStudent ? (selectedExamForStudent.esaiQuestions || []).length : 0;
+        const draft = {
+          isExamStarted: isExamStarted,
+          examStartTime: examStartTime,
+          selectedExamId: selectedExamForStudent ? selectedExamForStudent.id : '',
+          nama_peserta: document.getElementById('nama_peserta').value,
+          nim: document.getElementById('nim').value,
+          prodi: document.getElementById('prodi').value,
+          semester: document.getElementById('semester').value,
+          kelas: document.getElementById('kelas').value,
+          waktu_ujian: document.getElementById('waktu_ujian').value,
+          esai: {},
+          pg: {}
+        };
+        for (let i = 1; i <= pgCount; i++) {
+          const checked = document.querySelector('input[name="pg_' + i + '"]:checked');
+          if (checked) draft.pg[i] = checked.value;
+        }
+        for (let j = 1; j <= esaiCount; j++) {
+          const ta = document.getElementById('jawaban_askep_' + j);
+          if (ta) draft.esai[j] = ta.value;
+        }
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      } catch (e) {
+        console.warn('Gagal menyimpan draft:', e);
+      }
+    }
+
+    function restoreDraftFromLocal() {
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+        const draft = JSON.parse(raw);
+        if (draft.nama_peserta) document.getElementById('nama_peserta').value = draft.nama_peserta;
+        if (draft.nim) document.getElementById('nim').value = draft.nim;
+        if (draft.prodi) document.getElementById('prodi').value = draft.prodi;
+        if (draft.kelas) document.getElementById('kelas').value = draft.kelas;
+        if (draft.waktu_ujian) document.getElementById('waktu_ujian').value = draft.waktu_ujian;
+
+        if (draft.semester) {
+          const semEl = document.getElementById('semester');
+          semEl.value = draft.semester;
+          handleSemesterSelectChange();
+        }
+        if (draft.selectedExamId) {
+          const mkEl = document.getElementById('pilih_matkul');
+          mkEl.value = draft.selectedExamId;
+          handleCourseSelectChange();
+        }
+
+        if (draft.isExamStarted && draft.examStartTime && selectedExamForStudent) {
+          isExamStarted = true;
+          examStartTime = Number(draft.examStartTime);
+          renderQuestionsForExam(selectedExamForStudent);
+
+          if (draft.esai) {
+            Object.entries(draft.esai).forEach(([num, val]) => {
+              const ta = document.getElementById('jawaban_askep_' + num);
+              if (ta) ta.value = val;
+            });
+          }
+          if (draft.pg) {
+            Object.entries(draft.pg).forEach(([num, val]) => {
+              const radio = document.querySelector('input[name="pg_' + num + '"][value="' + val + '"]');
+              if (radio) radio.checked = true;
+            });
+          }
+
+          const elapsedSecs = Math.floor((Date.now() - examStartTime) / 1000);
+          remainingSeconds = Math.max(0, totalExamSeconds - elapsedSecs);
+          lockCourseSelectionFields(true);
+          revealExamQuestionsUI();
+          startExamTimer();
+        }
+      } catch (e) {
+        console.warn('Gagal memuat draft:', e);
+      }
+    }
+
+    function resetDraft() {
+      if (!confirm('Apakah Anda yakin ingin mengosongkan sesi saat ini dan kembali ke pemilihan mata kuliah?')) return;
+      localStorage.removeItem(DRAFT_KEY);
+      if (timerInterval) clearInterval(timerInterval);
+      isExamStarted = false;
+      examStartTime = null;
+
+      lockCourseSelectionFields(false);
+      document.getElementById('exam-form').reset();
+      populateStudentSemesterDropdown();
+      setDefaultDateTime();
+
+      document.getElementById('exam-questions-wrapper').classList.add('hidden');
+      document.getElementById('exam-active-banner').classList.add('hidden');
+      document.getElementById('start-exam-bar').classList.remove('hidden');
+    }
+
+    // =========================================================================
+    // 7. PENGIRIMAN JAWABAN UJIAN KE DATABASE SUPABASE
+    // =========================================================================
+    async function handleExamSubmit(event) {
+      event.preventDefault();
+
+      if (!isExamStarted || !selectedExamForStudent) {
+        alert('Silakan pilih mata kuliah dan klik tombol "Mulai Ujian" terlebih dahulu.');
+        return;
+      }
+
+      const namaPeserta = document.getElementById('nama_peserta').value.trim();
+      const nim = document.getElementById('nim').value.trim();
+      const prodi = document.getElementById('prodi').value.trim();
+      const semester = selectedExamForStudent.semester;
+      const kelas = document.getElementById('kelas').value;
+      const waktuUjian = document.getElementById('waktu_ujian').value.trim();
+
+      const pgQuestions = selectedExamForStudent.pgQuestions || [];
+      const esaiQuestions = selectedExamForStudent.esaiQuestions || [];
+
+      const jawabanPgObj = {
+        _meta: {
+          exam_id: selectedExamForStudent.id,
+          judul_ujian: selectedExamForStudent.judulUjian,
+          mata_kuliah: selectedExamForStudent.mataKuliah,
+          bobot_pg: selectedExamForStudent.bobotPg,
+          bobot_esai: selectedExamForStudent.bobotEsai,
+          jumlah_soal_pg: pgQuestions.length,
+          jumlah_soal_esai: esaiQuestions.length
+        }
+      };
+      let jumlahBenar = 0;
+
+      for (let idx = 0; idx < pgQuestions.length; idx++) {
+        const num = idx + 1;
+        const selected = document.querySelector('input[name="pg_' + num + '"]:checked');
+        if (!selected) {
+          alert('Soal Pilihan Ganda Nomor ' + num + ' belum dijawab. Silakan periksa kembali.');
+          return;
+        }
+        const chosenVal = selected.value;
+        const correctKey = pgQuestions[idx].kunci;
+        const isCorrect = chosenVal === correctKey;
+        if (isCorrect) jumlahBenar++;
+        jawabanPgObj['soal_' + num] = {
+          dipilih: chosenVal,
+          kunci: correctKey,
+          benar: isCorrect
+        };
+      }
+
+      const esaiAnswers = [];
+      for (let j = 0; j < esaiQuestions.length; j++) {
+        const ta = document.getElementById('jawaban_askep_' + (j + 1));
+        const val = ta ? ta.value.trim() : '';
+        if (!val) {
+          alert('Soal Esai Nomor ' + (pgQuestions.length + j + 1) + ' belum dijawab.');
+          if (ta) ta.focus();
+          return;
+        }
+        esaiAnswers.push(val);
+      }
+      jawabanPgObj._esai_jawaban = esaiAnswers;
+
+      if (!confirm('Kirim jawaban ujian ' + selectedExamForStudent.mataKuliah + ' atas nama ' + namaPeserta + ' (NIM: ' + nim + ') sekarang?')) {
+        return;
+      }
+
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>Mengirim Jawaban...</span>';
+
+      const durasiDetik = examStartTime ? Math.round((Date.now() - examStartTime) / 1000) : 0;
+      const bobotPg = Number(selectedExamForStudent.bobotPg || 80);
+      const skorPg = pgQuestions.length > 0
+        ? Math.round((jumlahBenar / pgQuestions.length) * bobotPg * 100) / 100
+        : 0;
+
+      const askep1 = esaiAnswers[0] || '-';
+      const askep2 = esaiAnswers.length > 2
+        ? esaiAnswers.slice(1).map((ans, idx) => '[Esai ' + (idx + 2) + ']\n' + ans).join('\n\n')
+        : (esaiAnswers[1] || '-');
+
+      const payload = {
+        nama_peserta: namaPeserta,
+        nim: nim,
+        prodi: prodi,
+        semester: semester,
+        kelas: kelas,
+        waktu_ujian: waktuUjian,
+        durasi_detik: durasiDetik,
+        jawaban_pg: jawabanPgObj,
+        jumlah_benar_pg: jumlahBenar,
+        skor_pg: skorPg,
+        jawaban_askep_1: askep1,
+        jawaban_askep_2: askep2
+      };
+
+      if (esaiQuestions.length === 0) {
+        payload.skor_askep_1 = 0;
+        payload.skor_askep_2 = 0;
+        payload.nilai_akhir = skorPg;
+      }
+
+      let recordId = 'UNIQHBA-' + Date.now();
+
+      if (isSupabaseReady && supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient
+            .from(SUPABASE_TABLE)
+            .insert([payload])
+            .select();
+
+          if (error) throw error;
+          if (data && data.length > 0) {
+            recordId = data[0].id;
+          }
+        } catch (err) {
+          console.error('Error insert ke Supabase:', err);
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<span>Kirim Jawaban Ujian</span>';
+          alert(
+            'Gagal mengirim jawaban ke server Supabase: ' +
+              (err.message || 'Periksa koneksi internet Anda.') +
+              '\n\nSilakan coba klik Kirim kembali.'
+          );
+          return;
+        }
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>Kirim Jawaban Ujian</span>';
+        alert('Koneksi database Supabase belum dikonfigurasi oleh dosen pengampu. Hubungi pengawas ujian.');
+        return;
+      }
+
+      if (timerInterval) clearInterval(timerInterval);
+      isExamStarted = false;
+      localStorage.removeItem(DRAFT_KEY);
+      lastSubmittedPayload = Object.assign({ id: recordId, created_at: new Date().toISOString() }, payload);
+
+      document.getElementById('exam-form').classList.add('hidden');
+      const receiptSection = document.getElementById('receipt-section');
+      receiptSection.classList.remove('hidden');
+
+      document.getElementById('rec-id').textContent = recordId;
+      document.getElementById('rec-time').textContent = new Date().toLocaleString('id-ID') + ' WITA';
+      document.getElementById('rec-name').textContent = namaPeserta + ' (' + nim + ')';
+      document.getElementById('rec-class').textContent = prodi + ' \u2022 Semester ' + semester + ' \u2022 ' + kelas;
+      document.getElementById('rec-course').textContent = selectedExamForStudent.mataKuliah + ' (' + selectedExamForStudent.judulUjian + ')';
+      document.getElementById('rec-pg-label').textContent = 'Skor Pilihan Ganda (Maks. ' + bobotPg + '):';
+      document.getElementById('rec-pg-score').textContent =
+        skorPg + ' / ' + bobotPg + ' (' + jumlahBenar + ' dari ' + pgQuestions.length + ' soal benar)';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function downloadBackupJSON() {
+      if (!lastSubmittedPayload) return;
+      const blob = new Blob([JSON.stringify(lastSubmittedPayload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Ujian_' + lastSubmittedPayload.nim + '_' + lastSubmittedPayload.nama_peserta.replace(/\s+/g, '_') + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // =========================================================================
+    // 8. PANEL DOSEN: LOGIN (dosen123), FILTER REKAP, KOREKSI ESAI & EKSPOR CSV
+    // =========================================================================
+    function toggleLecturerModal() {
+      const modal = document.getElementById('lecturer-modal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        const loginBox = document.getElementById('lecturer-login-box');
+        const pinInput = document.getElementById('lecturer-pin-input');
+        if (loginBox && !loginBox.classList.contains('hidden') && pinInput) {
+          setTimeout(() => pinInput.focus(), 50);
+        }
+      }
+    }
+
+    function verifyLecturerPin() {
+      const inputEl = document.getElementById('lecturer-pin-input');
+      const pin = (inputEl ? inputEl.value : '').trim();
+      if (pin.toLowerCase() === LECTURER_PIN.toLowerCase()) {
+        document.getElementById('lecturer-login-box').classList.add('hidden');
+        document.getElementById('lecturer-dashboard').classList.remove('hidden');
+        renderLecturerExamBankList();
+        if (examBank.length > 0) loadExamIntoEditor(examBank[0].id);
+        loadResultsFromSupabase();
+      } else {
+        alert('Password Dosen salah!');
+        if (inputEl) {
+          inputEl.value = '';
+          inputEl.focus();
+        }
+      }
+    }
+
+    function getCourseNameFromRow(row) {
+      if (row && row.jawaban_pg && row.jawaban_pg._meta && row.jawaban_pg._meta.mata_kuliah) {
+        return row.jawaban_pg._meta.mata_kuliah;
+      }
+      return 'Keperawatan Medikal Bedah III';
+    }
+
+    function populateRekapFilters() {
+      const semFilter = document.getElementById('filter-rekap-semester');
+      const mkFilter = document.getElementById('filter-rekap-matkul');
+      if (!semFilter || !mkFilter) return;
+
+      const prevSem = semFilter.value;
+      const prevMk = mkFilter.value;
+
+      const semesters = sortSemesters([...new Set(cachedResults.map((r) => r.semester).filter(Boolean))]);
+      const courses = [...new Set(cachedResults.map((r) => getCourseNameFromRow(r)).filter(Boolean))].sort();
+
+      semFilter.innerHTML = '<option value="">Semua Semester</option>';
+      semesters.forEach((s) => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = 'Semester ' + s;
+        semFilter.appendChild(opt);
+      });
+      if (prevSem && semesters.includes(prevSem)) semFilter.value = prevSem;
+
+      mkFilter.innerHTML = '<option value="">Semua Mata Kuliah</option>';
+      courses.forEach((c) => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        mkFilter.appendChild(opt);
+      });
+      if (prevMk && courses.includes(prevMk)) mkFilter.value = prevMk;
+    }
+
+    function getFilteredResults() {
+      const semVal = document.getElementById('filter-rekap-semester')?.value || '';
+      const mkVal = document.getElementById('filter-rekap-matkul')?.value || '';
+      return cachedResults.filter((r) => {
+        if (semVal && r.semester !== semVal) return false;
+        if (mkVal && getCourseNameFromRow(r) !== mkVal) return false;
+        return true;
+      });
+    }
+
+    async function loadResultsFromSupabase() {
+      const infoEl = document.getElementById('lecturer-count-info');
+      const tbody = document.getElementById('lecturer-table-body');
+
+      if (!isSupabaseReady || !supabaseClient) {
+        infoEl.textContent = 'Database Supabase belum terhubung. Klik "Pengaturan Koneksi Supabase" di sebelah kanan.';
+        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Koneksi database belum diatur.</td></tr>';
+        return;
+      }
+
+      infoEl.textContent = 'Mengambil data peserta dari Supabase...';
+
+      try {
+        const { data, error } = await supabaseClient
+          .from(SUPABASE_TABLE)
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        cachedResults = data || [];
+        populateRekapFilters();
+        renderLecturerResultsTable();
+      } catch (err) {
+        console.error(err);
+        infoEl.textContent = 'Gagal memuat data: ' + err.message;
+      }
+    }
+
+    function renderLecturerResultsTable() {
+      const infoEl = document.getElementById('lecturer-count-info');
+      const tbody = document.getElementById('lecturer-table-body');
+      const filtered = getFilteredResults();
+
+      infoEl.textContent = 'Menampilkan ' + filtered.length + ' dari ' + cachedResults.length + ' Peserta';
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Belum ada data peserta untuk filter ini.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered
+        .map((row) => {
+          const mkName = getCourseNameFromRow(row);
+          const askepTotal =
+            row.skor_askep_1 !== null && row.skor_askep_1 !== undefined && row.skor_askep_2 !== null && row.skor_askep_2 !== undefined
+              ? Number(row.skor_askep_1) + Number(row.skor_askep_2)
+              : null;
+          const finalScore =
+            row.nilai_akhir !== null && row.nilai_akhir !== undefined
+              ? row.nilai_akhir
+              : askepTotal !== null
+              ? Number(row.skor_pg) + askepTotal
+              : row.skor_pg + ' (Sementara)';
+
+          return (
+            '<tr class="hover:bg-slate-50">' +
+              '<td class="p-3 font-mono text-xs">' + escapeHtml(row.nim) + '</td>' +
+              '<td class="p-3 font-semibold text-slate-800">' + escapeHtml(row.nama_peserta) + '</td>' +
+              '<td class="p-3 text-xs">Sem. ' + escapeHtml(row.semester || '-') + '<br><span class="text-slate-500">' + escapeHtml(row.kelas) + '</span></td>' +
+              '<td class="p-3 text-xs font-medium text-emerald-900 max-w-[180px]">' + escapeHtml(mkName) + '</td>' +
+              '<td class="p-3 font-bold text-emerald-700">' + row.skor_pg + '</td>' +
+              '<td class="p-3">' + (askepTotal !== null ? askepTotal : '<span class="text-amber-600 text-xs font-semibold">Belum Dinilai</span>') + '</td>' +
+              '<td class="p-3 font-extrabold text-slate-900">' + finalScore + '</td>' +
+              '<td class="p-3 text-center">' +
+                '<button type="button" onclick="openGradingBoxById(\'' + escapeHtml(row.id) + '\')" class="px-2.5 py-1 rounded bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold">' +
+                  'Koreksi Esai' +
+                '</button>' +
+              '</td>' +
+            '</tr>'
+          );
+        })
+        .join('');
+    }
+
+    function openGradingBoxById(rowId) {
+      const row = cachedResults.find((r) => String(r.id) === String(rowId));
+      if (!row) return;
+      activeGradingId = row.id;
+      document.getElementById('grading-detail-box').classList.remove('hidden');
+      document.getElementById('grading-student-title').textContent =
+        'Koreksi Esai: ' + row.nama_peserta + ' (' + row.nim + ') — ' + getCourseNameFromRow(row);
+
+      const metaBobotEsai = row.jawaban_pg && row.jawaban_pg._meta && row.jawaban_pg._meta.bobot_esai
+        ? Number(row.jawaban_pg._meta.bobot_esai)
+        : 20;
+      const maxEsai1 = Math.round((metaBobotEsai / 2) * 10) / 10;
+
+      const gridEl = document.getElementById('grading-essays-grid');
+      gridEl.innerHTML =
+        '<div class="bg-white p-3 rounded-lg border border-slate-200">' +
+          '<p class="font-bold text-slate-800 mb-1">Jawaban Esai 1:</p>' +
+          '<pre class="whitespace-pre-wrap font-sans text-slate-700 max-h-48 overflow-y-auto">' + escapeHtml(row.jawaban_askep_1 || '-') + '</pre>' +
+          '<div class="mt-2 pt-2 border-t border-slate-100 flex items-center gap-2">' +
+            '<label class="font-semibold">Skor Esai 1 (0-' + maxEsai1 + '):</label>' +
+            '<input type="number" id="input-skor-1" min="0" max="100" step="0.5" value="' + (row.skor_askep_1 !== null && row.skor_askep_1 !== undefined ? row.skor_askep_1 : '') + '" class="w-20 border border-slate-300 rounded px-2 py-1" />' +
+          '</div>' +
+        '</div>' +
+        '<div class="bg-white p-3 rounded-lg border border-slate-200">' +
+          '<p class="font-bold text-slate-800 mb-1">Jawaban Esai 2 / Lanjutan:</p>' +
+          '<pre class="whitespace-pre-wrap font-sans text-slate-700 max-h-48 overflow-y-auto">' + escapeHtml(row.jawaban_askep_2 || '-') + '</pre>' +
+          '<div class="mt-2 pt-2 border-t border-slate-100 flex items-center gap-2">' +
+            '<label class="font-semibold">Skor Esai 2 (0-' + maxEsai1 + '):</label>' +
+            '<input type="number" id="input-skor-2" min="0" max="100" step="0.5" value="' + (row.skor_askep_2 !== null && row.skor_askep_2 !== undefined ? row.skor_askep_2 : '') + '" class="w-20 border border-slate-300 rounded px-2 py-1" />' +
+          '</div>' +
+        '</div>';
+
+      document.getElementById('input-catatan-dosen').value = row.catatan_dosen || '';
+    }
+
+    async function saveAskepGrades() {
+      if (!activeGradingId || !isSupabaseReady || !supabaseClient) return;
+      const s1 = parseFloat(document.getElementById('input-skor-1').value || '0');
+      const s2 = parseFloat(document.getElementById('input-skor-2').value || '0');
+      const catatan = document.getElementById('input-catatan-dosen').value.trim();
+
+      const targetRow = cachedResults.find((r) => r.id === activeGradingId);
+      const skorPg = targetRow ? Number(targetRow.skor_pg) : 0;
+      const nilaiAkhir = Math.round((skorPg + s1 + s2) * 100) / 100;
+
+      try {
+        const { error } = await supabaseClient
+          .from(SUPABASE_TABLE)
+          .update({
+            skor_askep_1: s1,
+            skor_askep_2: s2,
+            nilai_akhir: nilaiAkhir,
+            catatan_dosen: catatan
+          })
+          .eq('id', activeGradingId);
+
+        if (error) throw error;
+        alert('Nilai berhasil disimpan! Nilai Akhir: ' + nilaiAkhir);
+        document.getElementById('grading-detail-box').classList.add('hidden');
+        loadResultsFromSupabase();
+      } catch (err) {
+        alert('Gagal menyimpan nilai: ' + err.message);
+      }
+    }
+
+    function exportTableToCSV() {
+      const exportList = getFilteredResults();
+      if (exportList.length === 0) {
+        alert('Tidak ada data untuk diekspor.');
+        return;
+      }
+      const headers = ['NIM', 'Nama Peserta', 'Prodi', 'Semester', 'Kelas', 'Mata Kuliah', 'Waktu Ujian', 'Benar PG', 'Skor PG', 'Skor Esai 1', 'Skor Esai 2', 'Nilai Akhir'];
+      const rows = exportList.map((r) => [
+        '"' + r.nim + '"',
+        '"' + r.nama_peserta + '"',
+        '"' + r.prodi + '"',
+        '"' + r.semester + '"',
+        '"' + r.kelas + '"',
+        '"' + getCourseNameFromRow(r) + '"',
+        '"' + r.waktu_ujian + '"',
+        r.jumlah_benar_pg,
+        r.skor_pg,
+        r.skor_askep_1 !== null && r.skor_askep_1 !== undefined ? r.skor_askep_1 : '',
+        r.skor_askep_2 !== null && r.skor_askep_2 !== undefined ? r.skor_askep_2 : '',
+        r.nilai_akhir !== null && r.nilai_akhir !== undefined ? r.nilai_akhir : r.skor_pg
+      ]);
+      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', 'Rekap_Nilai_Ujian_UNIQHBA.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Inisialisasi halaman saat selesai dimuat
+    document.addEventListener('DOMContentLoaded', async () => {
+      initSupabase();
+      await loadExamBankFromStorageOrSupabase();
+      setDefaultDateTime();
+      restoreDraftFromLocal();
+
+      ['nama_peserta', 'nim', 'prodi', 'kelas', 'waktu_ujian'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', () => {
+            if (id === 'prodi') el.dataset.autoSet = 'false';
+            saveDraftToLocal();
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
