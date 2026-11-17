@@ -809,7 +809,7 @@ CREATE POLICY "Akses penuh pengaturan ujian" ON pengaturan_ujian FOR ALL USING (
     // 1. KONFIGURASI DATABASE SUPABASE & PIN DOSEN
     //    >>> GANTI 2 BARIS DI BAWAH INI DENGAN PROJECT URL & ANON KEY ANDA <<<
     // =========================================================================
-    const DEFAULT_SUPABASE_URL = 'https://pldepoiecxuulwggsyyh.supabase.co/rest/v1/';
+    const DEFAULT_SUPABASE_URL = 'https://pldepoiecxuulwggsyyh.supabase.co';
     const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_kS-YkK3J4CM3d_K0P4X3bA_CWocoFgL';
     const SUPABASE_TABLE = 'hasil_uts_kmb3';
     const SUPABASE_CONFIG_TABLE = 'pengaturan_ujian';
@@ -1175,7 +1175,7 @@ CREATE POLICY "Akses penuh pengaturan ujian" ON pengaturan_ujian FOR ALL USING (
         if (!error) {
           return 'Tersimpan & disinkronkan ke server Supabase untuk seluruh mahasiswa!';
         }
-        return 'Tersimpan di browser ini (jalankan SQL tabel pengaturan_ujian di Supabase untuk sinkron online).';
+        return 'Tersimpan di browser ini (Info server: ' + (error.message || 'tabel pengaturan_ujian belum siap') + ').';
       } catch (err) {
         return 'Tersimpan di browser ini.';
       }
